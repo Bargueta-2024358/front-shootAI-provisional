@@ -1,51 +1,44 @@
-import { useEffect } from 'react'
-import Lenis from 'lenis'
-import Navbar from './components/Navbar'
-import Hero from './components/Hero'
-import Philosophy from './components/Philosophy'
-import EditorialSection from './components/EditorialSection'
-import Gallery from './components/Gallery'
-import Testimonial from './components/Testimonial'
-import FinalCTA from './components/FinalCTA'
-import Footer from './components/Footer'
-import CustomCursor from './components/CustomCursor'
-import { editorialBlocks } from './data/content'
+import { lazy, Suspense } from 'react'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import Landing from './views/Landing'
+
+// Non-landing views are lazy-loaded: each chunk is only downloaded when
+// the user navigates to that route for the first time.
+const PreShoot       = lazy(() => import('./views/PreShoot'))
+const LiveShoot      = lazy(() => import('./views/LiveShoot'))
+const Waiting        = lazy(() => import('./views/Waiting'))
+const ModelSimulator = lazy(() => import('./views/ModelSimulator'))
+const OutfitStyling  = lazy(() => import('./views/OutfitStyling'))
+
+function RouteLoader() {
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-black">
+      <div className="flex items-center gap-[6px]" aria-label="Cargando…">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="block h-1.5 w-1.5 animate-pulse rounded-full bg-[#A67B5B]"
+            style={{ animationDelay: `${i * 0.18}s` }}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export default function App() {
-  useEffect(() => {
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (prefersReducedMotion) return
-
-    const lenis = new Lenis({ duration: 1.1, smoothWheel: true })
-    let raf = 0
-
-    const loop = (time: number) => {
-      lenis.raf(time)
-      raf = requestAnimationFrame(loop)
-    }
-
-    raf = requestAnimationFrame(loop)
-    return () => {
-      cancelAnimationFrame(raf)
-      lenis.destroy()
-    }
-  }, [])
-
   return (
-    <>
-      <CustomCursor />
-      <Navbar />
-      <main>
-        <Hero />
-        <Philosophy />
-        {editorialBlocks.map((block) => (
-          <EditorialSection key={block.id} {...block} />
-        ))}
-        <Gallery />
-        <Testimonial />
-        <FinalCTA />
-      </main>
-      <Footer />
-    </>
+    <BrowserRouter>
+      <Suspense fallback={<RouteLoader />}>
+        <Routes>
+          <Route path="/"                element={<Landing />} />
+          <Route path="/pre-shoot"       element={<PreShoot />} />
+          <Route path="/live-shoot"      element={<LiveShoot />} />
+          <Route path="/espera"          element={<Waiting />} />
+          <Route path="/model-simulator" element={<ModelSimulator />} />
+          <Route path="/outfit-styling"  element={<OutfitStyling />} />
+        </Routes>
+      </Suspense>
+    </BrowserRouter>
   )
 }
