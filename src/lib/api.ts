@@ -1,22 +1,10 @@
-import { supabase } from './supabase'
-
 export const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api'
-
-async function getAccessToken(): Promise<string | null> {
-  const { data } = await supabase.auth.getSession()
-  return data.session?.access_token ?? null
-}
 
 export async function apiFetch(
   path: string,
   options: RequestInit = {}
 ): Promise<Response> {
-  const token = await getAccessToken()
   const headers = new Headers(options.headers)
-
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`)
-  }
 
   if (
     options.body &&

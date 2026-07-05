@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute'
 import Landing from './views/Landing'
 
@@ -8,7 +8,6 @@ const LiveShoot = lazy(() => import('./views/LiveShoot'))
 const Waiting = lazy(() => import('./views/Waiting'))
 const ModelSimulator = lazy(() => import('./views/ModelSimulator'))
 const OutfitStyling = lazy(() => import('./views/OutfitStyling'))
-const Auth = lazy(() => import('./views/Auth'))
 const Profile = lazy(() => import('./views/Profile'))
 const Favorites = lazy(() => import('./views/Favorites'))
 
@@ -46,7 +45,7 @@ export default function App() {
       <Suspense fallback={<RouteLoader />}>
           <Routes>
             <Route path="/" element={<Landing />} />
-            <Route path="/auth" element={<Auth />} />
+            <Route path="/auth" element={<Navigate to="/pre-shoot" replace />} />
             <Route
               path="/profile"
               element={

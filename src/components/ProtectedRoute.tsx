@@ -1,4 +1,4 @@
-import { Navigate, useLocation } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 interface ProtectedRouteProps {
@@ -10,10 +10,9 @@ export default function ProtectedRoute({
   children,
   requireBodyPhoto = false,
 }: ProtectedRouteProps) {
-  const { user, loading, profile, profileLoading } = useAuth()
-  const location = useLocation()
+  const { profileLoading, profile } = useAuth()
 
-  if (loading || profileLoading) {
+  if (profileLoading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-black">
         <div className="flex items-center gap-[6px]" aria-label="Cargando…">
@@ -27,10 +26,6 @@ export default function ProtectedRoute({
         </div>
       </div>
     )
-  }
-
-  if (!user) {
-    return <Navigate to="/auth" state={{ from: location.pathname }} replace />
   }
 
   if (requireBodyPhoto && !profile?.bodyPhotoUrl) {

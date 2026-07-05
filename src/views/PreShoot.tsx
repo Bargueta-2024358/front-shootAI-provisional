@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import Navbar from '../components/Navbar'
@@ -26,14 +26,7 @@ interface CategoryResult {
   tags: string[]
 }
 
-const GENDER_OPTIONS: { value: TargetGender; label: string }[] = [
-  { value: 'woman', label: 'Mujer' },
-  { value: 'man', label: 'Hombre' },
-  { value: 'unisex', label: 'Unisex' },
-]
-
 // ---------------------------------------------------------------------------
-// File type helpers
 // ---------------------------------------------------------------------------
 
 const ACCEPTED_DOC_TYPES = new Set([
@@ -352,21 +345,18 @@ export default function PreShoot() {
   const [analyzing, setAnalyzing] = useState(false)
   const [analysisError, setAnalysisError] = useState<string | null>(null)
   const [notes, setNotes] = useState('')
-  const [gender, setGender] = useState<TargetGender>(
-    profile?.gender === 'kids' ? 'unisex' : (profile?.gender ?? 'unisex')
-  )
 
-  useEffect(() => {
+  const profileGender = useMemo<TargetGender>(() => {
     if (profile?.gender && profile.gender !== 'kids') {
-      setGender(profile.gender)
+      return profile.gender
     }
+    return 'man'
   }, [profile?.gender])
 
   useEffect(() => {
     const saved = loadPreShootState()
     if (!saved) return
     setProjectId(saved.projectId)
-    setGender(saved.gender)
     if (saved.tags.length > 0) {
       setCategoryResult({ tags: saved.tags })
     }
@@ -379,23 +369,23 @@ export default function PreShoot() {
     if (!projectId) return
     syncPreShootSession(
       projectId,
-      gender,
+      profileGender,
       categoryResult?.tags ?? [],
       notes.trim()
     )
-    navigate('/outfit-styling', { state: { projectId, gender } })
-  }, [navigate, projectId, gender, categoryResult?.tags, notes])
+    navigate('/outfit-styling', { state: { projectId, gender: profileGender } })
+  }, [navigate, projectId, profileGender, categoryResult?.tags, notes])
 
   const goToCamera = useCallback(() => {
     if (!projectId) return
     syncPreShootSession(
       projectId,
-      gender,
+      profileGender,
       categoryResult?.tags ?? [],
       notes.trim()
     )
-    navigate('/live-shoot', { state: { projectId, gender } })
-  }, [navigate, projectId, gender, categoryResult?.tags, notes])
+    navigate('/live-shoot', { state: { projectId, gender: profileGender } })
+  }, [navigate, projectId, profileGender, categoryResult?.tags, notes])
 
   // Cleanup object URLs on unmount
   useEffect(() => {
@@ -463,7 +453,7 @@ export default function PreShoot() {
         `/requirements/${projectIdFromSave}/categories`,
         {
           method: 'POST',
-          body: JSON.stringify({ gender }),
+          body: JSON.stringify({ gender: profileGender }),
         }
       )
       const categoriesJson = await categoriesRes.json()
@@ -480,7 +470,7 @@ export default function PreShoot() {
       setCategoryResult({ tags })
       savePreShootState({
         projectId: projectIdFromSave,
-        gender,
+        gender: profileGender,
         tags,
         notes: notes.trim(),
       })
@@ -558,28 +548,6 @@ export default function PreShoot() {
                   Ej: &quot;look casual para oficina&quot; o sube fotos de outfits de referencia para detectar su categoría…
                 </span>
               )}
-            </div>
-
-            <div className="mt-8">
-              <p className="font-display text-[10px] tracking-[0.38em] uppercase text-mid-gray mb-3">
-                Para quién
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {GENDER_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setGender(option.value)}
-                    className={`border px-4 py-2 font-display text-[10px] tracking-[0.2em] uppercase transition-colors ${
-                      gender === option.value
-                        ? 'border-caramel bg-caramel text-white'
-                        : 'border-silver text-mid-gray hover:border-caramel hover:text-caramel'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
             </div>
           </section>
 

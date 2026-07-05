@@ -7,6 +7,7 @@ export const waitingMessages = [
 export const navLinks = [
   { label: 'Pre-Shoot', href: '/pre-shoot' },
   { label: 'Live-Shoot', href: '/live-shoot' },
+  { label: 'Favoritos', href: '/favoritos' },
   { label: 'Nuestra Casa', href: '/' },
   { label: 'Contacto', href: '/#contacto' },
 ]

@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { navLinks } from '../data/content'
 import AnimatedLink from './AnimatedLink'
 import { useAuth } from '../context/AuthContext'
 
 export default function Navbar() {
-  const navigate = useNavigate()
-  const { user, profile, signOut } = useAuth()
+  const { profile } = useAuth()
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -19,11 +18,6 @@ export default function Navbar() {
   }, [])
 
   const light = !scrolled
-
-  async function handleSignOut() {
-    await signOut()
-    navigate('/')
-  }
 
   return (
     <motion.header
@@ -50,51 +44,33 @@ export default function Navbar() {
         </nav>
 
         <div className="flex items-center gap-4">
-          {user ? (
-            <details
-              className="relative hidden md:block"
-              open={menuOpen}
-              onToggle={(e) => setMenuOpen((e.target as HTMLDetailsElement).open)}
-            >
-              <summary
-                className={`interactive list-none cursor-pointer font-display text-xs tracking-[0.15em] uppercase ${
-                  light ? 'text-white' : 'text-black'
-                }`}
-              >
-                {profile?.displayName || user.email?.split('@')[0] || 'Cuenta'}
-              </summary>
-              <div className="absolute right-0 top-full mt-3 min-w-[180px] border border-silver bg-white p-2 shadow-lg">
-                <Link
-                  to="/profile"
-                  className="block px-3 py-2 font-body text-sm text-charcoal hover:bg-smoke"
-                >
-                  Perfil
-                </Link>
-                <Link
-                  to="/favoritos"
-                  className="block px-3 py-2 font-body text-sm text-charcoal hover:bg-smoke"
-                >
-                  Favoritos
-                </Link>
-                <button
-                  type="button"
-                  onClick={handleSignOut}
-                  className="block w-full px-3 py-2 text-left font-body text-sm text-charcoal hover:bg-smoke"
-                >
-                  Cerrar sesión
-                </button>
-              </div>
-            </details>
-          ) : (
-            <Link
-              to="/auth"
-              className={`interactive hidden font-display text-xs tracking-[0.15em] uppercase md:inline-block ${
-                light ? 'text-white hover:text-caramel' : 'text-black hover:text-caramel'
+          <details
+            className="relative hidden md:block"
+            open={menuOpen}
+            onToggle={(e) => setMenuOpen((e.target as HTMLDetailsElement).open)}
+          >
+            <summary
+              className={`interactive list-none cursor-pointer font-display text-xs tracking-[0.15em] uppercase ${
+                light ? 'text-white' : 'text-black'
               }`}
             >
-              Iniciar sesión
-            </Link>
-          )}
+              {profile?.displayName || 'Juan Perez'}
+            </summary>
+            <div className="absolute right-0 top-full mt-3 min-w-[180px] border border-silver bg-white p-2 shadow-lg">
+              <Link
+                to="/profile"
+                className="block px-3 py-2 font-body text-sm text-charcoal hover:bg-smoke"
+              >
+                Perfil
+              </Link>
+              <Link
+                to="/favoritos"
+                className="block px-3 py-2 font-body text-sm text-charcoal hover:bg-smoke"
+              >
+                Favoritos
+              </Link>
+            </div>
+          </details>
 
           <a
             href="/#contacto"
@@ -123,27 +99,12 @@ export default function Navbar() {
                   {link.label}
                 </AnimatedLink>
               ))}
-              {user ? (
-                <>
-                  <Link to="/profile" className="block py-2 text-sm">
-                    Perfil
-                  </Link>
-                  <Link to="/favoritos" className="block py-2 text-sm">
-                    Favoritos
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={handleSignOut}
-                    className="block py-2 text-sm"
-                  >
-                    Cerrar sesión
-                  </button>
-                </>
-              ) : (
-                <Link to="/auth" className="block py-2 text-sm">
-                  Iniciar sesión
-                </Link>
-              )}
+              <Link to="/profile" className="block py-2 text-sm">
+                Perfil
+              </Link>
+              <Link to="/favoritos" className="block py-2 text-sm">
+                Favoritos
+              </Link>
               <a
                 href="/#contacto"
                 className="interactive mt-2 block border border-black px-3 py-2 text-center font-display text-xs tracking-[0.15em] uppercase hover:border-caramel hover:bg-caramel hover:text-white"

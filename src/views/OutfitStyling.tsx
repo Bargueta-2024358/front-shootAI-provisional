@@ -158,40 +158,49 @@ function SaveFavoriteModal({
   onClose: () => void
   onSaved: (outfitId: string) => void
 }) {
-  const [title, setTitle] = useState(`Look ${state.category}`)
+  const [title, setTitle] = useState('')
   const [event, setEvent] = useState('')
   const [occasion, setOccasion] = useState('')
-  const [loadingOccasion, setLoadingOccasion] = useState(true)
+  const [loadingSuggestions, setLoadingSuggestions] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
 
-    async function loadOccasion() {
-      setLoadingOccasion(true)
+    async function loadSuggestions() {
+      setLoadingSuggestions(true)
       try {
-        const data = await apiJson<{ occasion: string }>('/favorites/suggest-occasion', {
-          method: 'POST',
-          body: JSON.stringify({
-            category: state.category,
-            event: event || title,
-            garments: state.outfit.garments,
-          }),
-        })
-        if (!cancelled) setOccasion(data.occasion)
+        const data = await apiJson<{ occasion: string; theme: string }>(
+          '/favorites/suggest-occasion',
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              category: state.category,
+              event: event || undefined,
+              garments: state.outfit.garments,
+            }),
+          }
+        )
+        if (!cancelled) {
+          setTitle(data.theme || `Look ${state.category}`)
+          setOccasion(data.occasion || state.category || 'Ocasion casual')
+        }
       } catch {
-        if (!cancelled) setOccasion(state.category || 'Ocasion casual')
+        if (!cancelled) {
+          setTitle(`Look ${state.category}`)
+          setOccasion(state.category || 'Ocasion casual')
+        }
       } finally {
-        if (!cancelled) setLoadingOccasion(false)
+        if (!cancelled) setLoadingSuggestions(false)
       }
     }
 
-    loadOccasion()
+    loadSuggestions()
     return () => {
       cancelled = true
     }
-  }, [state.category, state.outfit.garments, event, title])
+  }, [state.category, state.outfit.garments, event])
 
   async function handleSave() {
     setSaving(true)
@@ -229,7 +238,7 @@ function SaveFavoriteModal({
         <div className="mt-6 flex flex-col gap-4">
           <label className="flex flex-col gap-1">
             <span className="font-display text-[10px] tracking-[0.2em] uppercase text-mid-gray">
-              Título / tema
+              Temática / título {loadingSuggestions ? '(sugerida por IA…)' : '(editable)'}
             </span>
             <input
               value={title}
@@ -250,7 +259,7 @@ function SaveFavoriteModal({
           </label>
           <label className="flex flex-col gap-1">
             <span className="font-display text-[10px] tracking-[0.2em] uppercase text-mid-gray">
-              Ocasión {loadingOccasion ? '(sugerida por IA…)' : '(editable)'}
+              Ocasión {loadingSuggestions ? '(sugerida por IA…)' : '(editable)'}
             </span>
             <input
               value={occasion}
@@ -276,7 +285,7 @@ function SaveFavoriteModal({
           </button>
           <button
             type="button"
-            disabled={saving || loadingOccasion}
+            disabled={saving || loadingSuggestions}
             onClick={handleSave}
             className="flex-1 bg-caramel px-4 py-3 font-display text-xs tracking-[0.2em] uppercase text-white disabled:opacity-50"
           >
