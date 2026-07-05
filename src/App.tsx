@@ -26,6 +26,7 @@ function RouteLoader() {
   )
 }
 
+
 export default function App() {
   return (
     <BrowserRouter>
