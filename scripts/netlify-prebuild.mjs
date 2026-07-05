@@ -35,7 +35,7 @@ if (backendUrl) {
     configPath,
     JSON.stringify(
       {
-        apiBaseUrl: `${backendUrl.replace(/\/$/, '')}/api`,
+        apiBaseUrl: '/api',
         backendUrl,
       },
       null,

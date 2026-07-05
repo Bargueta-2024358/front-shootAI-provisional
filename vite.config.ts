@@ -21,14 +21,10 @@ export default defineConfig(({ mode }) => {
     env.BACKEND_URL ||
     (mode === 'production' ? DEFAULT_BACKEND_URL : '')
 
-  const productionApiUrl = backendUrl
-    ? `${backendUrl.replace(/\/$/, '')}/api`
-    : '/api'
-
   const viteEnv = {
     VITE_API_URL:
       env.VITE_API_URL ||
-      (mode === 'production' ? productionApiUrl : DEFAULTS.VITE_API_URL),
+      (mode === 'production' ? '/api' : DEFAULTS.VITE_API_URL),
     VITE_BACKEND_URL: backendUrl || DEFAULTS.VITE_BACKEND_URL,
     VITE_SUPABASE_URL: env.VITE_SUPABASE_URL || DEFAULTS.VITE_SUPABASE_URL,
     VITE_SUPABASE_ANON_KEY:
