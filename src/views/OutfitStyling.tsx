@@ -9,7 +9,6 @@ import {
   clearShootSession,
   favoriteKey,
   loadOutfitsCache,
-  loadPreShootState,
   loadSavedFavoriteKeys,
   markFavoriteSaved,
   resolveFlowState,
@@ -37,70 +36,7 @@ const SLOT_LABELS: Record<string, string> = {
   dress: 'Vestido',
 }
 
-const FALLBACK_GARMENTS = [
-  {
-    slot: 'outerwear',
-    name: 'Blazer estructurado',
-    brand: 'ShootAI',
-    type: 'outerwear',
-    imageUrl: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=700&q=80',
-    productUrl: '#',
-    score: 8.4,
-  },
-  {
-    slot: 'top',
-    name: 'Camisa limpia',
-    brand: 'ShootAI',
-    type: 'top',
-    imageUrl: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=700&q=80',
-    productUrl: '#',
-    score: 8.2,
-  },
-  {
-    slot: 'bottom',
-    name: 'Pantalón recto',
-    brand: 'ShootAI',
-    type: 'bottom',
-    imageUrl: 'https://images.unsplash.com/photo-1506629905607-d9f297d61941?w=700&q=80',
-    productUrl: '#',
-    score: 8,
-  },
-  {
-    slot: 'footwear',
-    name: 'Zapato neutro',
-    brand: 'ShootAI',
-    type: 'footwear',
-    imageUrl: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=700&q=80',
-    productUrl: '#',
-    score: 7.9,
-  },
-]
-
-function buildFallbackOutfits(projectId: string): {
-  groups: OutfitsByCategory[]
-  matchPercentage: number
-} {
-  const saved = loadPreShootState()
-  const categories = saved?.tags?.length ? saved.tags : ['casual']
-  const minLooks = categories.length === 1 ? 3 : 2
-  const groups = categories.map((category) => ({
-    category,
-    matchPercentage: 82,
-    outfits: Array.from({ length: minLooks }, (_, outfitIndex): Outfit => ({
-      id: `${projectId}-${category}-fallback-${outfitIndex + 1}`,
-      score: 8.2 - outfitIndex * 0.2,
-      garments: FALLBACK_GARMENTS.map((garment) => ({
-        ...garment,
-        name:
-          outfitIndex === 0
-            ? garment.name
-            : `${garment.name} ${outfitIndex + 1}`,
-      })),
-    })),
-  }))
-
-  return { groups, matchPercentage: 82 }
-}
+type FlowGender = 'man' | 'woman' | 'unisex'
 
 const fadeUp = {
   initial: { opacity: 0, y: 28 },
@@ -361,6 +297,8 @@ export default function OutfitStyling() {
   const { projectId, gender } = resolveFlowState(
     (location.state as FlowState | null) ?? undefined
   )
+  const effectiveGender: FlowGender =
+    gender === 'woman' ? 'woman' : gender === 'unisex' ? 'unisex' : 'man'
 
   const [outfitsByCategory, setOutfitsByCategory] = useState<OutfitsByCategory[]>([])
   const [matchPercentage, setMatchPercentage] = useState<number | null>(null)
@@ -391,7 +329,7 @@ export default function OutfitStyling() {
       setError(null)
 
       if (refreshNonce === 0) {
-        const cached = loadOutfitsCache(activeProjectId)
+        const cached = loadOutfitsCache(activeProjectId, effectiveGender)
         if (cached) {
           setOutfitsByCategory(cached.outfitsByCategory)
           setMatchPercentage(cached.matchPercentage)
@@ -409,36 +347,39 @@ export default function OutfitStyling() {
           `/requirements/${activeProjectId}/process`,
           {
             method: 'POST',
-            body: JSON.stringify({ limit: 8, gender }),
+            body: JSON.stringify({ limit: 8, gender: effectiveGender }),
           }
         )
 
         if (cancelled) return
 
         const { groups, matchPercentage: matchPct } = normalizeOutfitsResponse(data || {})
+        if (groups.length === 0) {
+          setOutfitsByCategory([])
+          setMatchPercentage(0)
+          setError('El backend no devolvió outfits para este proyecto.')
+          return
+        }
+
         setOutfitsByCategory(groups)
         setMatchPercentage(matchPct)
 
         saveOutfitsCache({
           projectId: activeProjectId,
-          gender,
+          gender: effectiveGender,
           outfitsByCategory: groups,
           matchPercentage: matchPct,
           savedAt: new Date().toISOString(),
         })
       } catch (err) {
         if (!cancelled) {
-          const fallback = buildFallbackOutfits(activeProjectId)
-          setOutfitsByCategory(fallback.groups)
-          setMatchPercentage(fallback.matchPercentage)
-          setError(null)
-          saveOutfitsCache({
-            projectId: activeProjectId,
-            gender,
-            outfitsByCategory: fallback.groups,
-            matchPercentage: fallback.matchPercentage,
-            savedAt: new Date().toISOString(),
-          })
+          setOutfitsByCategory([])
+          setMatchPercentage(0)
+          setError(
+            err instanceof Error
+              ? err.message
+              : 'No se pudo cargar los outfits desde el backend.'
+          )
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -449,11 +390,11 @@ export default function OutfitStyling() {
     return () => {
       cancelled = true
     }
-  }, [projectId, gender, refreshNonce])
+  }, [projectId, effectiveGender, refreshNonce])
 
   const goToCamera = () => {
     if (projectId) {
-      navigate('/live-shoot', { state: { projectId, gender } })
+      navigate('/live-shoot', { state: { projectId, gender: effectiveGender } })
     }
   }
 

@@ -47,12 +47,21 @@ export function saveOutfitsCache(cache: OutfitsCache) {
   sessionStorage.setItem(SESSION_OUTFITS_KEY, JSON.stringify(cache))
 }
 
-export function loadOutfitsCache(projectId: string): OutfitsCache | null {
+export function clearOutfitsCache() {
+  sessionStorage.removeItem(SESSION_OUTFITS_KEY)
+}
+
+export function loadOutfitsCache(
+  projectId: string,
+  gender?: TargetGender
+): OutfitsCache | null {
   const raw = sessionStorage.getItem(SESSION_OUTFITS_KEY)
   if (!raw) return null
   try {
     const parsed = JSON.parse(raw) as OutfitsCache
-    return parsed.projectId === projectId ? parsed : null
+    if (parsed.projectId !== projectId) return null
+    if (gender && parsed.gender !== gender) return null
+    return parsed
   } catch {
     return null
   }
@@ -100,7 +109,7 @@ export function resolveFlowState(locationState?: {
   const gender =
     (locationState?.gender ||
       sessionStorage.getItem(SESSION_GENDER_KEY) ||
-      'unisex') as TargetGender
+      'man') as TargetGender
 
   if (projectId) {
     persistFlowSession(projectId, gender)

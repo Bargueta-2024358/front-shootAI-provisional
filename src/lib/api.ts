@@ -35,11 +35,15 @@ function resolveApiBaseSync(): string {
   }
 
   if (!isLocalHost()) {
-    // Same-origin proxy on Netlify — evita CORS con Render
-    return '/api'
+    return normalizeBase(
+      (import.meta.env.VITE_API_URL as string | undefined) ||
+        'https://server-shootai.onrender.com/api'
+    )
   }
 
-  return 'http://localhost:3000/api'
+  return normalizeBase(
+    (import.meta.env.VITE_API_URL as string | undefined) || '/api'
+  )
 }
 
 async function loadRuntimeConfig() {

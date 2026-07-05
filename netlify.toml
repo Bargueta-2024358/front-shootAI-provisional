@@ -1,36 +1,18 @@
 [build]
   command = "npm install --include=dev && npm run build"
   publish = "dist"
-  functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "20"
   NPM_CONFIG_PRODUCTION = "false"
-  VITE_API_URL = "/api"
+  VITE_API_URL = "https://server-shootai.onrender.com/api"
   VITE_SUPABASE_URL = "https://qoukpzswuqihnzqhupkq.supabase.co"
   VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFvdWtwenN3dXFpaG56cWh1cGtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxOTUzNDksImV4cCI6MjA5ODc3MTM0OX0.t3Gx-l91DcoYrptYvPUuNbEti4JSIeCizhxMgCZYgLo"
-  SUPABASE_URL = "https://qoukpzswuqihnzqhupkq.supabase.co"
-  SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFvdWtwenN3dXFpaG56cWh1cGtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxOTUzNDksImV4cCI6MjA5ODc3MTM0OX0.t3Gx-l91DcoYrptYvPUuNbEti4JSIeCizhxMgCZYgLo"
-  SUPABASE_CATALOG_URL = "https://qgbkaykyzybeorpfkjxf.supabase.co"
-  SUPABASE_CATALOG_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFnYmtheWt5enliZW9ycGZranhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxOTc0NTAsImV4cCI6MjA5ODc3MzQ1MH0.PnGAODzXIPsinhmp6kRjuf6rl30bXgzuiPwgg-9P7E0"
-  CLOUDINARY_CLOUD_NAME = "djvw8p0hn"
-  CLOUDINARY_API_KEY = "924946488326563"
-  CLOUDINARY_API_SECRET = "4maMZaHyOn2WP34rJ7dqySld0ws"
-  DEMO_EMPRESA_ID = "520d6f4f-7dec-4821-9b17-2f54e35772fd"
   VITE_DEMO_EMPRESA_ID = "520d6f4f-7dec-4821-9b17-2f54e35772fd"
-  CODEX_API_URL = "https://api.openai.com/v1/chat/completions"
-  CODEX_MODEL = "gpt-4o-mini"
-
-[functions]
-  node_bundler = "esbuild"
-  included_files = [".backend/**"]
-
-[functions."api"]
-  timeout = 10
 
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/api/:splat"
+  to = "https://server-shootai.onrender.com/api/:splat"
   status = 200
   force = true
 

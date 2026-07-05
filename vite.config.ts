@@ -3,9 +3,10 @@ import react from '@vitejs/plugin-react'
 import { fileURLToPath } from 'node:url'
 
 const DEFAULT_BACKEND_URL = 'https://server-shootai.onrender.com'
+const DEFAULT_API_URL = `${DEFAULT_BACKEND_URL}/api`
 
 const DEFAULTS = {
-  VITE_API_URL: 'http://localhost:3000/api',
+  VITE_API_URL: DEFAULT_API_URL,
   VITE_BACKEND_URL: DEFAULT_BACKEND_URL,
   VITE_SUPABASE_URL: 'https://qoukpzswuqihnzqhupkq.supabase.co',
   VITE_SUPABASE_ANON_KEY:
@@ -24,7 +25,7 @@ export default defineConfig(({ mode }) => {
   const viteEnv = {
     VITE_API_URL:
       env.VITE_API_URL ||
-      (mode === 'production' ? '/api' : DEFAULTS.VITE_API_URL),
+      (mode === 'production' ? DEFAULT_API_URL : '/api'),
     VITE_BACKEND_URL: backendUrl || DEFAULTS.VITE_BACKEND_URL,
     VITE_SUPABASE_URL: env.VITE_SUPABASE_URL || DEFAULTS.VITE_SUPABASE_URL,
     VITE_SUPABASE_ANON_KEY:
@@ -44,8 +45,9 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: {
         '/api': {
-          target: 'http://localhost:3000',
+          target: DEFAULT_BACKEND_URL,
           changeOrigin: true,
+          secure: true,
         },
       },
     },

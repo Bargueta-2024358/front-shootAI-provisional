@@ -7,12 +7,11 @@ import { WaitingOverlay } from './Waiting'
 import { useAuth } from '../context/AuthContext'
 import { apiJson } from '../lib/api'
 import {
+  clearOutfitsCache,
   loadPreShootState,
-  saveOutfitsCache,
   savePreShootState,
   type TargetGender,
 } from '../lib/sessionFlow'
-import type { Outfit, OutfitsByCategory } from '../types/auth'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -27,6 +26,9 @@ interface UploadedFile {
 interface CategoryResult {
   tags: string[]
 }
+
+const uniqTags = (tags: string[]) =>
+  [...new Set(tags.map((tag) => String(tag || '').trim()).filter(Boolean))]
 
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
@@ -44,39 +46,6 @@ const isAccepted  = (f: File) => isImageFile(f) || isDocFile(f)
 const DEMO_EMPRESA_ID =
   (import.meta.env.VITE_DEMO_EMPRESA_ID as string | undefined)?.trim() ||
   '520d6f4f-7dec-4821-9b17-2f54e35772fd'
-
-const FALLBACK_GARMENTS = [
-  {
-    name: 'Blazer estructurado',
-    brand: 'ShootAI',
-    type: 'outerwear',
-    imageUrl: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=700&q=80',
-  },
-  {
-    name: 'Camisa limpia',
-    brand: 'ShootAI',
-    type: 'top',
-    imageUrl: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=700&q=80',
-  },
-  {
-    name: 'Pantalón recto',
-    brand: 'ShootAI',
-    type: 'bottom',
-    imageUrl: 'https://images.unsplash.com/photo-1506629905607-d9f297d61941?w=700&q=80',
-  },
-  {
-    name: 'Zapato neutro',
-    brand: 'ShootAI',
-    type: 'footwear',
-    imageUrl: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=700&q=80',
-  },
-  {
-    name: 'Accesorio editorial',
-    brand: 'ShootAI',
-    type: 'accessory',
-    imageUrl: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=700&q=80',
-  },
-]
 
 function inferFallbackCategories(notes: string, files: UploadedFile[]): string[] {
   const text = notes.toLowerCase()
@@ -96,32 +65,6 @@ function inferFallbackCategories(notes: string, files: UploadedFile[]): string[]
   }
 
   return [...categories].slice(0, 4)
-}
-
-function buildFallbackOutfits(tags: string[]): OutfitsByCategory[] {
-  const categories = tags.length > 0 ? tags : ['casual']
-  const minLooks = categories.length === 1 ? 3 : 2
-
-  return categories.map((category) => ({
-    category,
-    matchPercentage: 82,
-    outfits: Array.from({ length: minLooks }, (_, outfitIndex): Outfit => ({
-      id: `${category}-local-${outfitIndex + 1}`,
-      score: 8.2 - outfitIndex * 0.2,
-      garments: FALLBACK_GARMENTS.map((garment, garmentIndex) => ({
-        slot: garment.type,
-        name:
-          outfitIndex === 0
-            ? garment.name
-            : `${garment.name} ${outfitIndex + 1}`,
-        brand: garment.brand,
-        type: garment.type,
-        imageUrl: garment.imageUrl,
-        productUrl: '#',
-        score: 8 - garmentIndex * 0.1,
-      })),
-    })),
-  }))
 }
 
 // ---------------------------------------------------------------------------
@@ -431,7 +374,11 @@ export default function PreShoot() {
   const [notes, setNotes] = useState('')
 
   const profileGender = useMemo<TargetGender>(() => {
-    if (profile?.gender && profile.gender !== 'kids') {
+    if (
+      profile?.gender &&
+      profile.gender !== 'kids' &&
+      profile.gender !== 'unisex'
+    ) {
       return profile.gender
     }
     return 'man'
@@ -539,41 +486,36 @@ export default function PreShoot() {
         body: JSON.stringify({ gender: profileGender }),
       })
 
-      const tags: string[] = categoriesData.tags || [
-        ...(categoriesData.extractedCategories || []),
-        ...(categoriesData.aestheticTags || []),
+      const styleCategories = uniqTags(categoriesData.extractedCategories || [])
+      const moodTags = uniqTags(categoriesData.aestheticTags || [])
+      const backendTags: string[] = categoriesData.tags || [
+        ...styleCategories,
+        ...moodTags,
       ]
+      const tags = uniqTags(backendTags)
+      const resolvedTags =
+        tags.length > 0 ? tags : inferFallbackCategories(notes, files)
 
-      setCategoryResult({ tags })
+      setCategoryResult({ tags: resolvedTags })
+      clearOutfitsCache()
+      if (styleCategories.length === 0) {
+        setAnalysisError(
+          'No se detectaron categorías de estilo en las fotos. Activamos categorías locales para continuar.'
+        )
+      }
       savePreShootState({
         projectId: projectIdFromSave,
         gender: profileGender,
-        tags,
+        tags: resolvedTags,
         notes: notes.trim(),
       })
     } catch (err) {
-      const fallbackProjectId = `local-${Date.now()}`
-      const tags = inferFallbackCategories(notes, files)
-
-      setProjectId(fallbackProjectId)
-      setCategoryResult({ tags })
-      savePreShootState({
-        projectId: fallbackProjectId,
-        gender: profileGender,
-        tags,
-        notes: notes.trim(),
-      })
-      saveOutfitsCache({
-        projectId: fallbackProjectId,
-        gender: profileGender,
-        outfitsByCategory: buildFallbackOutfits(tags),
-        matchPercentage: 82,
-        savedAt: new Date().toISOString(),
-      })
+      setProjectId(null)
+      setCategoryResult(null)
       setAnalysisError(
-        `Análisis local activado: ${
-          err instanceof Error ? err.message : 'el backend no respondió'
-        }`
+        err instanceof Error
+          ? err.message
+          : 'No se pudo conectar con el backend. Intenta de nuevo.'
       )
     } finally {
       setAnalyzing(false)
