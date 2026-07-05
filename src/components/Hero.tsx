@@ -133,13 +133,13 @@ export default function Hero() {
       <HeroHalf
         title="Pre-Shoot"
         href="/pre-shoot"
-        videoSrc="/videos/pre-shoot.webm"
+        videoSrc="/videos/pre-shoot.mp4"
         side="left"
       />
       <HeroHalf
         title="Live-Shoot"
         href="/live-shoot"
-        videoSrc="/videos/live-shoot.webm"
+        videoSrc="/videos/live-shoot.mp4"
         side="right"
       />
 
