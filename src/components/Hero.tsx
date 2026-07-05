@@ -6,13 +6,12 @@ interface HeroHalfProps {
   title: string
   href: string
   videoSrc: string
-  posterSrc: string
   side: 'left' | 'right'
 }
 
-function HeroHalf({ title, href, videoSrc, posterSrc }: HeroHalfProps) {
+function HeroHalf({ title, href, videoSrc }: HeroHalfProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const [hovered, setHovered] = useState(false)
+  const [playing, setPlaying] = useState(false)
   const fullyLoaded = useRef(false)
   const prefersReducedMotion =
     typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -26,17 +25,18 @@ function HeroHalf({ title, href, videoSrc, posterSrc }: HeroHalfProps) {
   }, [])
 
   const handleEnter = useCallback(() => {
-    setHovered(true)
     ensureLoaded()
     if (prefersReducedMotion) return
     const video = videoRef.current
     if (!video) return
     video.muted = true
-    video.play().catch(() => {/* autoplay blocked — user can tap on mobile */})
+    video.play()
+      .then(() => setPlaying(true))
+      .catch(() => {/* autoplay blocked */})
   }, [ensureLoaded, prefersReducedMotion])
 
   const handleLeave = useCallback(() => {
-    setHovered(false)
+    setPlaying(false)
     videoRef.current?.pause()
   }, [])
 
@@ -49,13 +49,20 @@ function HeroHalf({ title, href, videoSrc, posterSrc }: HeroHalfProps) {
     const video = videoRef.current
     if (!video) return
     video.muted = true
-    if (video.paused) video.play().catch(() => {})
-    else video.pause()
+    if (video.paused) {
+      video.play()
+        .then(() => setPlaying(true))
+        .catch(() => {})
+    } else {
+      video.pause()
+      setPlaying(false)
+    }
   }, [ensureLoaded])
 
   return (
     <div
       className="group relative h-[50vh] w-full overflow-hidden md:h-screen md:w-1/2"
+      style={{ background: 'linear-gradient(135deg, #1a1209 0%, #0d0d0d 60%, #1c1510 100%)' }}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
       onFocus={handleEnter}
@@ -66,15 +73,14 @@ function HeroHalf({ title, href, videoSrc, posterSrc }: HeroHalfProps) {
     >
       <video
         ref={videoRef}
-        className={`absolute inset-0 h-full w-full object-cover transition-transform duration-[250ms] ${
-          hovered && !prefersReducedMotion ? 'scale-105' : 'scale-100'
+        className={`absolute inset-0 h-full w-full object-cover transition-all duration-[250ms] ${
+          playing && !prefersReducedMotion ? 'scale-105 opacity-100' : 'scale-100 opacity-0'
         }`}
         src={videoSrc}
-        poster={posterSrc}
         muted
         loop
         playsInline
-        preload="metadata"
+        preload="none"
         aria-hidden
       />
 
@@ -128,14 +134,12 @@ export default function Hero() {
         title="Pre-Shoot"
         href="/pre-shoot"
         videoSrc="/videos/pre-shoot.mp4"
-        posterSrc="/videos/pre-shoot-poster.jpg"
         side="left"
       />
       <HeroHalf
         title="Live-Shoot"
         href="/live-shoot"
         videoSrc="/videos/live-shoot.mp4"
-        posterSrc="/videos/live-shoot-poster.jpg"
         side="right"
       />
 
