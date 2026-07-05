@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Shoot AI — Pitch Deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet"/>
+<style>
+/* ──────────────────────────────────────────────
+   BASE
+────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --black:   #0c0c0b;
+  --off:     #141412;
+  --white:   #F5F0EB;
+  --cream:   #EAE3D8;
+  --caramel: #A67B5B;
+  --caramel-d: #7A5A40;
+  --silver:  #B8B0A6;
+  --mid:     #7A7268;
+  --dim:     #4A4640;
+  --font-d:  'Playfair Display', serif;
+  --font-b:  'Lora', serif;
+}
+html, body { height: 100%; overflow: hidden; background: var(--black); color: var(--white); font-family: var(--font-b); -webkit-font-smoothing: antialiased; }
+
+/* ── Grain overlay ── */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 9000;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 220px 220px;
+  opacity: .028;
+  mix-blend-mode: overlay;
+}
+
+/* ── Custom cursor ── */
+#cur {
+  position: fixed; width: 8px; height: 8px;
+  background: var(--caramel); border-radius: 50%;
+  transform: translate(-50%,-50%); pointer-events: none;
+  z-index: 8900; transition: transform .15s ease, opacity .15s ease;
+  mix-blend-mode: screen;
+}
+#cur-ring {
+  position: fixed; width: 36px; height: 36px;
+  border: 1px solid rgba(166,123,91,.45); border-radius: 50%;
+  transform: translate(-50%,-50%); pointer-events: none;
+  z-index: 8899; transition: all .35s cubic-bezier(0.22,1,0.36,1);
+}
+
+/* ── Curtain (vertical lift transition) ── */
+#curtain {
+  position: fixed; inset: 0; z-index: 8800;
+  background: var(--black);
+  transform: translateY(100%);
+  will-change: transform;
+}
+#curtain::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(166,123,91,.9) 50%, transparent);
+}
+
+/* ── Deck ── */
+#deck { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+
+/* ── Slides ── */
+.slide {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: flex-start;
+  padding: clamp(2.5rem,5vw,5rem) clamp(3rem,7vw,8rem);
+  opacity: 0; pointer-events: none;
+}
+.slide.active { opacity: 1; pointer-events: all; }
+
+/* ── Stagger animation system ── */
+.a {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity .6s cubic-bezier(0.22,1,0.36,1) var(--d,0s),
+              transform .6s cubic-bezier(0.22,1,0.36,1) var(--d,0s);
+}
+.slide.active .a { opacity: 1; transform: none; }
+
+/* Special: slide from left */
+.a-l {
+  opacity: 0; transform: translateX(-22px);
+  transition: opacity .55s cubic-bezier(0.22,1,0.36,1) var(--d,0s),
+              transform .55s cubic-bezier(0.22,1,0.36,1) var(--d,0s);
+}
+.slide.active .a-l { opacity: 1; transform: none; }
+
+/* Clip reveal for display text */
+.clip-wrap { overflow: hidden; }
+.clip-inner {
+  display: block;
+  transform: translateY(105%);
+  transition: transform .75s cubic-bezier(0.22,1,0.36,1) var(--d,0s);
+}
+.slide.active .clip-inner { transform: translateY(0); }
+
+/* ── Typography helpers ── */
+.lbl {
+  font-family: var(--font-d);
+  font-size: clamp(8.5px,.82vw,10.5px);
+  letter-spacing: .44em; text-transform: uppercase; color: var(--mid);
+}
+.lbl-c { color: var(--caramel); }
+.h1 {
+  font-family: var(--font-d);
+  font-size: clamp(4rem,10vw,10.5rem);
+  font-weight: 700; line-height: .82; letter-spacing: -.01em;
+}
+.h2 {
+  font-family: var(--font-d);
+  font-size: clamp(1.9rem,4.2vw,4rem);
+  font-weight: 600; line-height: .88; letter-spacing: .02em;
+}
+.h3 {
+  font-family: var(--font-d);
+  font-size: clamp(1rem,1.9vw,1.65rem);
+  font-weight: 500; line-height: 1.1;
+}
+.body { font-family: var(--font-b); font-size: clamp(.78rem,1.1vw,.96rem); line-height: 1.72; color: var(--silver); }
+.body-xs { font-family: var(--font-b); font-size: clamp(.65rem,.82vw,.78rem); line-height: 1.62; color: var(--mid); }
+.em { color: var(--caramel); }
+.it { font-style: italic; }
+
+/* ── Layout ── */
+.row { display: flex; flex-direction: row; align-items: flex-start; }
+.col { display: flex; flex-direction: column; }
+.full { width: 100%; }
+.flex1 { flex: 1; }
+.center-x { align-items: center; }
+.center-self { align-self: center; }
+
+/* ── Decorative rule ── */
+.rule {
+  width: 0; height: 1px; background: var(--caramel);
+  transition: width 1.1s cubic-bezier(0.22,1,0.36,1) var(--d,.2s);
+}
+.slide.active .rule { width: 48px; }
+.rule-h {
+  width: 100%; height: 1px;
+  background: linear-gradient(90deg, rgba(166,123,91,.25), rgba(90,82,74,.08));
+  margin: clamp(1rem,2.2vw,1.8rem) 0;
+}
+
+/* ── Animated SVG line draw ── */
+.draw-path {
+  stroke-dasharray: 300; stroke-dashoffset: 300;
+  transition: stroke-dashoffset 1.2s cubic-bezier(0.22,1,0.36,1) var(--d,.3s);
+}
+.slide.active .draw-path { stroke-dashoffset: 0; }
+
+/* ── Cards ── */
+.card {
+  background: rgba(255,255,255,.038);
+  border: 1px solid rgba(200,190,178,.1);
+  padding: clamp(.9rem,2vw,1.6rem);
+  position: relative; overflow: hidden;
+}
+.card::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(166,123,91,.05) 0%, transparent 60%);
+  opacity: 0; transition: opacity .35s ease;
+}
+.card:hover::before { opacity: 1; }
+
+.card-hi {
+  background: var(--caramel-d);
+  border: 1px solid rgba(166,123,91,.3);
+  padding: clamp(.9rem,2vw,1.6rem);
+}
+
+/* ── Problem bars ── */
+.prob-bar {
+  display: flex; align-items: center;
+  gap: clamp(1.2rem,2.5vw,2.5rem);
+  padding: clamp(.7rem,1.5vw,1.2rem) 0;
+  border-bottom: 1px solid rgba(200,190,178,.07);
+  opacity: 0; transform: translateX(-24px);
+  transition: opacity .55s cubic-bezier(0.22,1,0.36,1) var(--d,0s),
+              transform .55s cubic-bezier(0.22,1,0.36,1) var(--d,0s);
+}
+.slide.active .prob-bar { opacity: 1; transform: none; }
+.prob-num {
+  font-family: var(--font-d); font-size: clamp(1.5rem,2.8vw,2.8rem);
+  font-weight: 700; color: rgba(166,123,91,.2); line-height: 1;
+  min-width: clamp(2.5rem,4vw,4.5rem); text-align: right;
+}
+.prob-icon { color: var(--caramel); flex-shrink: 0; }
+.prob-divider { width: 1px; align-self: stretch; background: rgba(200,190,178,.1); flex-shrink: 0; }
+.prob-title {
+  font-family: var(--font-d); font-size: clamp(.9rem,1.6vw,1.35rem);
+  font-weight: 500; color: var(--white); min-width: clamp(8rem,14vw,16rem);
+}
+.prob-body { font-family: var(--font-b); font-size: clamp(.65rem,.85vw,.8rem); line-height: 1.6; color: var(--mid); }
+
+/* ── Stat block ── */
+.stat-big {
+  font-family: var(--font-d); font-size: clamp(2.5rem,5.5vw,5.5rem);
+  font-weight: 700; color: var(--caramel); line-height: 1;
+}
+.stat-lbl { font-family: var(--font-b); font-size: clamp(.62rem,.8vw,.76rem); color: var(--mid); margin-top: .4rem; max-width: 12ch; line-height: 1.45; }
+
+/* ── Module card ── */
+.mod-card {
+  padding: clamp(1rem,2vw,1.75rem);
+  border: 1px solid rgba(200,190,178,.1);
+  position: relative; overflow: hidden;
+}
+.mod-card::after {
+  content: ''; position: absolute;
+  top: 0; left: 0; width: 0; height: 2px;
+  background: var(--caramel);
+  transition: width .9s cubic-bezier(0.22,1,0.36,1) var(--d,.15s);
+}
+.slide.active .mod-card::after { width: 100%; }
+.mod-num { font-family: var(--font-d); font-size: 9px; letter-spacing: .38em; text-transform: uppercase; color: var(--caramel); margin-bottom: .45rem; }
+.mod-t { font-family: var(--font-d); font-size: clamp(.9rem,1.7vw,1.3rem); font-weight: 600; margin-bottom: .45rem; }
+.mod-body { font-family: var(--font-b); font-size: clamp(.63rem,.82vw,.77rem); line-height: 1.6; color: var(--silver); }
+
+/* ── Flow step ── */
+.flow-wrap { position: relative; width: 100%; display: flex; }
+.flow-line-svg { position: absolute; top: 14px; left: 0; right: 0; }
+.flow-step { flex: 1; padding-top: 2.8rem; padding-right: clamp(1rem,2vw,2rem); position: relative; }
+.flow-step-dot {
+  position: absolute; top: 7px; left: 0;
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 1.5px solid var(--caramel); background: var(--black);
+  transform: scale(0);
+  transition: transform .4s cubic-bezier(0.34,1.56,0.64,1) var(--d,.2s);
+}
+.slide.active .flow-step-dot { transform: scale(1); }
+.flow-step-num { font-family: var(--font-d); font-size: clamp(1.8rem,3.5vw,3rem); font-weight: 700; color: rgba(166,123,91,.12); line-height: 1; margin-bottom: .3rem; }
+.flow-step-t { font-family: var(--font-d); font-size: clamp(.78rem,1.2vw,.98rem); font-weight: 600; color: var(--white); margin-bottom: .3rem; }
+.flow-step-d { font-family: var(--font-b); font-size: clamp(.6rem,.78vw,.74rem); line-height: 1.55; color: var(--mid); }
+
+/* ── BM pricing ── */
+.price-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: clamp(.8rem,1.6vw,1.4rem); width: 100%; }
+.price-card { border: 1px solid rgba(200,190,178,.1); padding: clamp(1rem,2vw,1.75rem); position: relative; }
+.price-card.featured { border-color: rgba(166,123,91,.4); background: rgba(166,123,91,.05); }
+.price-card.featured::before { content: 'Popular'; position: absolute; top: -1px; right: clamp(.8rem,1.5vw,1.2rem); font-family: var(--font-d); font-size: 8px; letter-spacing: .3em; text-transform: uppercase; color: var(--black); background: var(--caramel); padding: .2rem .6rem; }
+.price-icon { margin-bottom: .7rem; color: var(--caramel); }
+.price-t { font-family: var(--font-d); font-size: clamp(.85rem,1.4vw,1.1rem); font-weight: 600; margin-bottom: .45rem; }
+.price-num { font-family: var(--font-d); font-size: clamp(1.5rem,2.8vw,2.6rem); font-weight: 700; color: var(--caramel); line-height: 1; margin-bottom: .2rem; }
+.price-sub { font-family: var(--font-b); font-size: clamp(.6rem,.78vw,.74rem); color: var(--mid); line-height: 1.5; }
+
+/* ── Tech badge ── */
+.badge { display: inline-block; font-family: var(--font-b); font-size: clamp(.58rem,.72vw,.7rem); color: var(--mid); border: 1px solid rgba(200,190,178,.13); padding: .22rem .65rem; margin: .2rem; }
+
+/* ── Roadmap ── */
+.rm { display: flex; width: 100%; position: relative; }
+.rm::before { content: ''; position: absolute; top: 8px; left: 0; right: 0; height: 1px; background: rgba(166,123,91,.15); }
+.rm-progress { position: absolute; top: 8px; left: 0; height: 1px; background: var(--caramel); width: 0; transition: width 1.4s cubic-bezier(0.22,1,0.36,1) .4s; }
+.slide.active .rm-progress { width: 22%; }
+.rm-step { flex: 1; padding-top: 2.2rem; padding-right: clamp(.8rem,1.5vw,1.4rem); position: relative; }
+.rm-dot { position: absolute; top: 1px; left: 0; width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid rgba(166,123,91,.35); background: var(--black); transition: border-color .4s ease var(--d,.2s), background .4s ease var(--d,.2s); }
+.rm-dot.done { border-color: var(--caramel); background: var(--caramel); }
+.rm-phase { font-family: var(--font-d); font-size: 8.5px; letter-spacing: .3em; text-transform: uppercase; color: var(--caramel); margin-bottom: .4rem; }
+.rm-t { font-family: var(--font-d); font-size: clamp(.75rem,1.1vw,.95rem); font-weight: 600; color: var(--white); margin-bottom: .3rem; }
+.rm-li { font-family: var(--font-b); font-size: clamp(.58rem,.72vw,.7rem); color: var(--mid); line-height: 1.65; padding-left: .75rem; position: relative; }
+.rm-li::before { content: ''; position: absolute; left: 0; top: .55em; width: 4px; height: 4px; border-radius: 50%; background: rgba(166,123,91,.35); }
+
+/* ── Nav ── */
+#nav {
+  position: fixed; bottom: clamp(1.2rem,2.5vh,2rem); left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 1.2rem; z-index: 8700;
+  background: rgba(12,12,11,.7); backdrop-filter: blur(12px);
+  border: 1px solid rgba(200,190,178,.1);
+  padding: .5rem 1.2rem;
+}
+.nb {
+  background: none; border: none; color: var(--mid);
+  font-family: var(--font-d); font-size: 9.5px; letter-spacing: .3em; text-transform: uppercase;
+  cursor: pointer; padding: .3rem .6rem;
+  transition: color .2s;
+}
+.nb:hover { color: var(--caramel); }
+#counter { font-family: var(--font-d); font-size: 10px; letter-spacing: .28em; color: var(--dim); min-width: 5ch; text-align: center; }
+#prog-bar { position: fixed; top: 0; left: 0; height: 1.5px; background: var(--caramel); transition: width .55s ease; z-index: 8700; }
+#slide-id { position: fixed; top: 2vh; right: 3vw; font-family: var(--font-d); font-size: 9.5px; letter-spacing: .32em; color: var(--dim); z-index: 8700; }
+#logo-pin { position: fixed; top: 2vh; left: 3vw; font-family: var(--font-d); font-size: 11px; letter-spacing: .4em; text-transform: uppercase; color: rgba(200,190,178,.28); z-index: 8700; }
+
+/* ── Deco BG number ── */
+.bg-num {
+  position: absolute; font-family: var(--font-d); font-weight: 700;
+  font-size: clamp(14rem,30vw,30rem); line-height: 1;
+  color: rgba(255,255,255,.024); pointer-events: none; user-select: none;
+  right: -1vw; bottom: -4vh; z-index: 0;
+}
+.slide > * { z-index: 1; }
+
+/* ── CTA slide specific ── */
+#s9 { align-items: center; text-align: center; }
+</style>
+</head>
+<body>
+
+<div id="prog-bar"></div>
+<div id="logo-pin">SHOOT AI</div>
+<div id="slide-id"></div>
+<div id="cur"></div>
+<div id="cur-ring"></div>
+<div id="curtain"></div>
+
+<div id="deck">
+
+<!-- ══════════════════════════════════════
+     01 — COVER
+══════════════════════════════════════ -->
+<section class="slide active" id="s0">
+  <div class="bg-num">01</div>
+
+  <!-- Animated background glow -->
+  <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden">
+    <div style="position:absolute;right:-10vw;top:-8vh;width:55vw;height:55vw;background:radial-gradient(circle,rgba(166,123,91,.09) 0%,transparent 65%);animation:breathe 7s ease-in-out infinite"></div>
+  </div>
+
+  <div class="col full" style="gap:0;max-width:72vw">
+    <div class="a" style="--d:.05s">
+      <p class="lbl lbl-c">Inteligencia Artificial &nbsp;·&nbsp; Moda &nbsp;·&nbsp; Fotografía Editorial</p>
+    </div>
+    <div style="margin-top:clamp(.8rem,2vw,1.6rem)">
+      <div class="clip-wrap"><span class="clip-inner h1" style="--d:.1s">SHOOT</span></div>
+      <div class="clip-wrap"><span class="clip-inner h1 it em" style="--d:.22s">AI</span></div>
+    </div>
+    <div class="a" style="--d:.45s;margin-top:clamp(.6rem,1.5vw,1.2rem)">
+      <p style="font-family:var(--font-d);font-size:clamp(.95rem,2.2vw,2rem);font-style:italic;color:var(--silver);font-weight:400">
+        Tu asistente de estilismo inteligente
+      </p>
+    </div>
+    <div class="rule" style="--d:.55s;margin:clamp(1.2rem,2.5vw,2.2rem) 0"></div>
+    <div class="a" style="--d:.65s">
+      <p class="body" style="max-width:44ch">
+        Plataforma de IA que acompaña al fotógrafo y al cliente en cada fase de la sesión editorial — desde la conceptualización hasta el disparo en tiempo real.
+      </p>
+    </div>
+    <div class="a" style="--d:.8s;display:flex;flex-wrap:wrap;gap:.65rem;margin-top:clamp(1.2rem,2.5vw,2rem)">
+      <span style="font-family:var(--font-d);font-size:9px;letter-spacing:.32em;text-transform:uppercase;padding:.3rem .9rem;border:1px solid rgba(166,123,91,.5);color:var(--caramel)">Pre-Shoot</span>
+      <span style="font-family:var(--font-d);font-size:9px;letter-spacing:.32em;text-transform:uppercase;padding:.3rem .9rem;border:1px solid rgba(166,123,91,.5);color:var(--caramel)">Live-Shoot</span>
+      <span style="font-family:var(--font-d);font-size:9px;letter-spacing:.32em;text-transform:uppercase;padding:.3rem .9rem;border:1px solid rgba(166,123,91,.5);color:var(--caramel)">Model Simulator</span>
+      <span style="font-family:var(--font-d);font-size:9px;letter-spacing:.32em;text-transform:uppercase;padding:.3rem .9rem;border:1px solid rgba(166,123,91,.35);color:var(--dim)">Outfit Styling</span>
+    </div>
+  </div>
+
+  <!-- Animated decorative SVG — right side -->
+  <svg style="position:absolute;right:6vw;top:50%;transform:translateY(-50%);opacity:.18" width="200" height="360" viewBox="0 0 200 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path class="draw-path" style="--d:.5s" d="M100 10 L190 55 L190 305 L100 350 L10 305 L10 55 Z" stroke="#A67B5B" stroke-width="1"/>
+    <path class="draw-path" style="--d:.9s" d="M100 40 L168 78 L168 282 L100 320 L32 282 L32 78 Z" stroke="#A67B5B" stroke-width=".5"/>
+    <circle class="draw-path" style="--d:1.1s;stroke-dasharray:314;stroke-dashoffset:314" cx="100" cy="180" r="50" stroke="#A67B5B" stroke-width=".5"/>
+  </svg>
+</section>
+
+<!-- ══════════════════════════════════════
+     02 — PROBLEMA
+══════════════════════════════════════ -->
+<section class="slide" id="s1">
+  <div class="bg-num">02</div>
+  <div class="col full" style="gap:clamp(.8rem,1.8vw,1.5rem)">
+    <div class="a" style="--d:.05s"><p class="lbl">El problema</p></div>
+    <div>
+      <div class="clip-wrap"><span class="clip-inner h2" style="--d:.1s">Una industria que improvisa</span></div>
+      <div class="clip-wrap"><span class="clip-inner h2 it em" style="--d:.2s">en el momento equivocado</span></div>
+    </div>
+    <div class="rule-h" style="opacity:.5"></div>
+
+    <!-- 4 horizontal problem bars -->
+    <div class="prob-bar" style="--d:.28s">
+      <span class="prob-num">01</span>
+      <span class="prob-divider"></span>
+      <span class="prob-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </span>
+      <span class="prob-divider"></span>
+      <span class="prob-title">40–60% del tiempo perdido</span>
+      <span class="prob-body">Coordinación de outfits sin datos reales del modelo ni del ambiente — pura intuición costosa.</span>
+    </div>
+    <div class="prob-bar" style="--d:.38s">
+      <span class="prob-num">02</span>
+      <span class="prob-divider"></span>
+      <span class="prob-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+      </span>
+      <span class="prob-divider"></span>
+      <span class="prob-title">Cero guía en tiempo real</span>
+      <span class="prob-body">Ningún sistema da retroalimentación instantánea sobre pose, silueta o paleta adaptada a la prenda durante la sesión.</span>
+    </div>
+    <div class="prob-bar" style="--d:.48s">
+      <span class="prob-num">03</span>
+      <span class="prob-divider"></span>
+      <span class="prob-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+      </span>
+      <span class="prob-divider"></span>
+      <span class="prob-title">Re-trabajo costoso</span>
+      <span class="prob-body">Los errores de selección de prendas se detectan en edición — cuando ya es demasiado tarde y caro corregirlos.</span>
+    </div>
+    <div class="prob-bar" style="--d:.58s;border-bottom:none">
+      <span class="prob-num">04</span>
+      <span class="prob-divider"></span>
+      <span class="prob-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </span>
+      <span class="prob-divider"></span>
+      <span class="prob-title">Recomendaciones genéricas</span>
+      <span class="prob-body">Sin personalización real: las sugerencias de estilismo ignoran la morfología del modelo y el concepto editorial.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     03 — SOLUCIÓN
+══════════════════════════════════════ -->
+<section class="slide" id="s2">
+  <div class="bg-num">03</div>
+  <div class="col full" style="gap:clamp(.8rem,2vw,1.8rem)">
+    <div class="a" style="--d:.05s"><p class="lbl">La solución</p></div>
+    <div>
+      <div class="clip-wrap"><span class="clip-inner h2" style="--d:.12s">IA que piensa en moda</span></div>
+      <div class="clip-wrap"><span class="clip-inner h2 it em" style="--d:.22s">contigo, en tiempo real</span></div>
+    </div>
+    <div class="a" style="--d:.35s">
+      <p class="body" style="max-width:52ch">
+        Shoot AI integra análisis de imagen, simulación de avatar 3D y asistencia en vivo para que cada decisión de estilismo esté respaldada por datos — antes y durante la sesión fotográfica.
+      </p>
+    </div>
+    <div class="rule-h"></div>
+    <!-- Three large stats -->
+    <div class="row a" style="--d:.45s;gap:clamp(2.5rem,6vw,8rem);margin-top:.5rem">
+      <div class="col" style="gap:.5rem">
+        <p class="stat-big" data-count="4" data-suffix=" módulos">4 módulos</p>
+        <p class="stat-lbl">de IA especializados en moda editorial</p>
+      </div>
+      <div style="width:1px;align-self:stretch;background:rgba(200,190,178,.08)"></div>
+      <div class="col" style="gap:.5rem">
+        <p class="stat-big" data-count="0" data-prefix="" data-suffix=" config">0 config</p>
+        <p class="stat-lbl">técnica requerida para empezar</p>
+      </div>
+      <div style="width:1px;align-self:stretch;background:rgba(200,190,178,.08)"></div>
+      <div class="col" style="gap:.5rem">
+        <p class="stat-big" data-count="100" data-suffix="%">100%</p>
+        <p class="stat-lbl">personalizado a cada sesión y modelo</p>
+      </div>
+    </div>
+    <!-- SVG decorative underline -->
+    <svg class="a" style="--d:.7s;width:100%;max-width:480px;height:32px;margin-top:-.5rem" viewBox="0 0 480 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path class="draw-path" style="--d:.75s" d="M0 24 Q120 8 240 24 Q360 40 480 24" stroke="rgba(166,123,91,.35)" stroke-width="1"/>
+    </svg>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     04 — MÓDULOS
+══════════════════════════════════════ -->
+<section class="slide" id="s3">
+  <div class="bg-num">04</div>
+  <div class="col full" style="gap:clamp(.7rem,1.8vw,1.4rem)">
+    <div class="a" style="--d:.05s"><p class="lbl">Plataforma</p></div>
+    <div>
+      <div class="clip-wrap"><span class="clip-inner h2" style="--d:.1s">4 módulos.</span></div>
+      <div class="clip-wrap"><span class="clip-inner h2 it em" style="--d:.2s">Un solo flujo.</span></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(.7rem,1.5vw,1.2rem);width:100%;margin-top:.5rem">
+      <div class="mod-card a" style="--d:.32s">
+        <p class="mod-num">Módulo 01</p>
+        <p class="mod-t">Pre-Shoot</p>
+        <p class="mod-body">Sube imágenes y documentos de referencia. La IA analiza silueta, recomienda prendas editoriales y genera una paleta de color personalizada antes de que la sesión comience.</p>
+      </div>
+      <div class="mod-card a" style="--d:.42s">
+        <p class="mod-num">Módulo 02</p>
+        <p class="mod-t">Live-Shoot</p>
+        <p class="mod-body">Feed de cámara en tiempo real con asistente IA en sidebar. Sugerencias de pose, encuadre y contraste de color mientras disparas. Sin interrumpir el flujo creativo.</p>
+      </div>
+      <div class="mod-card a" style="--d:.52s">
+        <p class="mod-num">Módulo 03</p>
+        <p class="mod-t">Model Simulator</p>
+        <p class="mod-body">Genera un avatar digital desde escaneo 3D o foto corporal. Previsualiza prendas sobre el modelo real antes de la sesión, con colores y siluetas exactas.</p>
+      </div>
+      <div class="mod-card a" style="--d:.62s;border-color:rgba(200,190,178,.06)">
+        <p class="mod-num" style="color:var(--dim)">Módulo 04</p>
+        <p class="mod-t" style="color:var(--silver)">Outfit Styling</p>
+        <p class="mod-body">Composición asistida de looks completos. La IA sugiere combinaciones coherentes con el concepto editorial. <em style="color:var(--caramel)">Próximamente.</em></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     05 — FLUJO
+══════════════════════════════════════ -->
+<section class="slide" id="s4">
+  <div class="bg-num">05</div>
+  <div class="col full" style="gap:clamp(.8rem,2vw,1.8rem)">
+    <div class="a" style="--d:.05s"><p class="lbl">Flujo de trabajo</p></div>
+    <div>
+      <div class="clip-wrap"><span class="clip-inner h2" style="--d:.1s">De la idea al disparo</span></div>
+      <div class="clip-wrap"><span class="clip-inner h2 it em" style="--d:.2s">en minutos.</span></div>
+    </div>
+    <div class="rule-h" style="opacity:.4"></div>
+    <div class="flow-wrap" style="margin-top:.5rem">
+      <!-- Animated connecting line -->
+      <svg class="flow-line-svg" height="2" preserveAspectRatio="none">
+        <line class="draw-path" style="--d:.35s;stroke-dasharray:2000;stroke-dashoffset:2000" x1="0" y1="1" x2="10000" y2="1" stroke="rgba(166,123,91,.2)" stroke-width="1"/>
+      </svg>
+      <div class="flow-step" style="--d:.3s">
+        <div class="flow-step-dot" style="--d:.3s"></div>
+        <p class="flow-step-num">01</p>
+        <p class="flow-step-t">Sube referencias</p>
+        <p class="flow-step-d">Imágenes de inspiración, briefs, notas de contexto. La IA absorbe el concepto editorial.</p>
+      </div>
+      <div class="flow-step" style="--d:.4s">
+        <div class="flow-step-dot" style="--d:.4s"></div>
+        <p class="flow-step-num">02</p>
+        <p class="flow-step-t">Analiza</p>
+        <p class="flow-step-d">Silueta, paleta de color, recomendaciones de prendas. Resultados en segundos.</p>
+      </div>
+      <div class="flow-step" style="--d:.5s">
+        <div class="flow-step-dot" style="--d:.5s"></div>
+        <p class="flow-step-num">03</p>
+        <p class="flow-step-t">Simula el look</p>
+        <p class="flow-step-d">Previsualiza prendas en el avatar digital antes de que el modelo llegue al set.</p>
+      </div>
+      <div class="flow-step" style="--d:.6s">
+        <div class="flow-step-dot" style="--d:.6s"></div>
+        <p class="flow-step-num">04</p>
+        <p class="flow-step-t">Dispara en vivo</p>
+        <p class="flow-step-d">Asistente activo: iluminación, pose, contraste. Cada decisión respaldada por IA.</p>
+      </div>
+      <div class="flow-step" style="--d:.7s;padding-right:0">
+        <div class="flow-step-dot" style="--d:.7s;background:var(--caramel);border-color:var(--caramel)"></div>
+        <p class="flow-step-num">05</p>
+        <p class="flow-step-t">Resultado</p>
+        <p class="flow-step-d">Sesiones más rápidas, menos re-trabajo en edición. Producto final alineado desde el inicio.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     06 — MERCADO
+══════════════════════════════════════ -->
+<section class="slide" id="s5">
+  <div class="bg-num">06</div>
+  <div class="col full" style="gap:clamp(.8rem,2vw,1.6rem)">
+    <div class="a" style="--d:.05s"><p class="lbl">Oportunidad de mercado</p></div>
+    <div>
+      <div class="clip-wrap"><span class="clip-inner h2" style="--d:.1s">Un mercado sin solución</span></div>
+      <div class="clip-wrap"><span class="clip-inner h2 it em" style="--d:.2s">tecnológica real.</span></div>
+    </div>
+    <div class="rule-h" style="opacity:.4"></div>
+    <!-- Stats row -->
+    <div class="row a" style="--d:.35s;gap:clamp(2rem,5vw,6rem)">
+      <div class="col" style="gap:.35rem">
+        <p class="stat-big" data-count="180" data-prefix="$" data-suffix="B">$180B</p>
+        <p class="stat-lbl">Mercado global fotografía de moda (2025)</p>
+      </div>
+      <div class="col" style="gap:.35rem">
+        <p class="stat-big" data-count="42" data-suffix="%">42%</p>
+        <p class="stat-lbl">Crecimiento anual en IA para moda</p>
+      </div>
+      <div class="col" style="gap:.35rem">
+        <p class="stat-big" data-count="3" data-suffix=".2M">3.2M</p>
+        <p class="stat-lbl">Fotógrafos profesionales en LATAM</p>
+      </div>
+      <div class="col" style="gap:.35rem">
+        <p class="stat-big" style="color:var(--dim)">&lt;1%</p>
+        <p class="stat-lbl">Con acceso a IA especializada en sesiones</p>
+      </div>
+    </div>
+    <div class="rule-h" style="opacity:.3"></div>
+    <!-- Segments -->
+    <div class="row a" style="--d:.5s;gap:clamp(1rem,2vw,1.8rem)">
+      <div class="card flex1">
+        <p class="lbl lbl-c" style="margin-bottom:.5rem">Fotógrafos editoriales</p>
+        <p class="body-xs">Profesionales independientes y agencias que producen para marcas de moda, revistas y e-commerce.</p>
+      </div>
+      <div class="card flex1">
+        <p class="lbl lbl-c" style="margin-bottom:.5rem">Estilistas y directores creativos</p>
+        <p class="body-xs">Equipos que validan decisiones de outfit antes y durante producciones de alto presupuesto.</p>
+      </div>
+      <div class="card flex1">
+        <p class="lbl lbl-c" style="margin-bottom:.5rem">Marcas de moda</p>
+        <p class="body-xs">Departamentos internos que producen contenido editorial con recursos limitados y tiempos ajustados.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     07 — MODELO DE NEGOCIO
+══════════════════════════════════════ -->
+<section class="slide" id="s6">
+  <div class="bg-num">07</div>
+  <div class="col full" style="gap:clamp(.8rem,2vw,1.6rem)">
+    <div class="a" style="--d:.05s"><p class="lbl">Modelo de negocio</p></div>
+    <div>
+      <div class="clip-wrap"><span class="clip-inner h2" style="--d:.1s">Suscripción SaaS</span></div>
+      <div class="clip-wrap"><span class="clip-inner h2 it em" style="--d:.2s">+ API white-label.</span></div>
+    </div>
+    <div class="price-grid a" style="--d:.35s;margin-top:.5rem">
+      <div class="price-card">
+        <div class="price-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        </div>
+        <p class="price-t">Studio</p>
+        <p class="price-num">$49<span style="font-size:.85rem;color:var(--mid)">/mes</span></p>
+        <p class="price-sub">Hasta 20 sesiones mensuales. Pre-Shoot + Live-Shoot. Ideal para fotógrafos independientes y equipos pequeños.</p>
+      </div>
+      <div class="price-card featured">
+        <div class="price-icon" style="color:#fff">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <p class="price-t">Agency</p>
+        <p class="price-num">$149<span style="font-size:.85rem;color:rgba(255,255,255,.5)">/mes</span></p>
+        <p class="price-sub">Sesiones ilimitadas. Todos los módulos incluyendo Model Simulator. Seats múltiples y reportes avanzados.</p>
+      </div>
+      <div class="price-card">
+        <div class="price-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </div>
+        <p class="price-t">Enterprise API</p>
+        <p class="price-num" style="font-size:clamp(1.2rem,2vw,2rem)">Custom</p>
+        <p class="price-sub">Integración white-label en plataformas de e-commerce o software de producción fotográfica existente.</p>
+      </div>
+    </div>
+    <div class="rule-h" style="opacity:.35"></div>
+    <div class="row a" style="--d:.55s;gap:clamp(2rem,5vw,7rem)">
+      <div class="col" style="gap:.3rem">
+        <p class="lbl" style="margin-bottom:.4rem">Año 1 proyectado</p>
+        <p class="h3 em">$280,000 USD</p>
+        <p class="body-xs">200 Studio + 40 Agency en LATAM y España</p>
+      </div>
+      <div class="col" style="gap:.3rem">
+        <p class="lbl" style="margin-bottom:.4rem">CAC estimado</p>
+        <p class="h3 em">$85 USD</p>
+        <p class="body-xs">Marketing de contenidos + comunidades</p>
+      </div>
+      <div class="col" style="gap:.3rem">
+        <p class="lbl" style="margin-bottom:.4rem">LTV estimado</p>
+        <p class="h3 em">$1,200 USD</p>
+        <p class="body-xs">Retención promedio 20 meses (SaaS B2B)</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     08 — TECNOLOGÍA
+══════════════════════════════════════ -->
+<section class="slide" id="s7">
+  <div class="bg-num">08</div>
+  <div class="col full" style="gap:clamp(.8rem,2vw,1.5rem)">
+    <div class="a" style="--d:.05s"><p class="lbl">Stack tecnológico</p></div>
+    <div>
+      <div class="clip-wrap"><span class="clip-inner h2" style="--d:.1s">Construido para escalar</span></div>
+      <div class="clip-wrap"><span class="clip-inner h2 it em" style="--d:.2s">sin fricción.</span></div>
+    </div>
+    <div class="row a" style="--d:.35s;gap:clamp(1.2rem,2.5vw,2.5rem);margin-top:.5rem">
+      <div class="col flex1" style="gap:clamp(.7rem,1.5vw,1.2rem)">
+        <div class="card col" style="gap:.6rem">
+          <p class="lbl lbl-c">Frontend</p>
+          <p class="body-xs">React 18 + TypeScript + Vite + Tailwind CSS. Animaciones con Framer Motion. Code-splitting y lazy loading por ruta. Deploy automático en Netlify CDN.</p>
+          <div><span class="badge">React 18</span><span class="badge">TypeScript</span><span class="badge">Vite</span><span class="badge">Tailwind</span><span class="badge">Framer Motion</span></div>
+        </div>
+        <div class="card col" style="gap:.6rem">
+          <p class="lbl lbl-c">Cámara &amp; Media</p>
+          <p class="body-xs">Acceso nativo al feed via getUserMedia. Soporte de formatos 3D (OBJ, GLB, GLTF) para el Model Simulator con renderizado SVG editorial.</p>
+          <div><span class="badge">WebRTC</span><span class="badge">getUserMedia</span><span class="badge">WebGL / Three.js</span></div>
+        </div>
+      </div>
+      <div style="width:1px;align-self:stretch;background:rgba(200,190,178,.08)"></div>
+      <div class="col flex1" style="gap:clamp(.7rem,1.5vw,1.2rem)">
+        <div class="card col" style="gap:.6rem">
+          <p class="lbl lbl-c">Backend &amp; IA <span style="color:var(--dim)">(roadmap)</span></p>
+          <p class="body-xs">API REST especializada para análisis de imagen, extracción de paleta, análisis de silueta y recomendaciones con LLM fine-tuned en moda editorial.</p>
+          <div><span class="badge">Computer Vision</span><span class="badge">LLM styling</span><span class="badge">WebSocket</span><span class="badge">REST API</span></div>
+        </div>
+        <div class="card col" style="gap:.6rem">
+          <p class="lbl lbl-c">Infraestructura</p>
+          <p class="body-xs">Deploy continuo en Netlify CDN. Cache headers optimizados para video y assets pesados. Arquitectura serverless para escalar en picos de producción.</p>
+          <div><span class="badge">Netlify CDN</span><span class="badge">GitHub Actions</span><span class="badge">Serverless</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     09 — ROADMAP
+══════════════════════════════════════ -->
+<section class="slide" id="s8">
+  <div class="bg-num">09</div>
+  <div class="col full" style="gap:clamp(.8rem,2vw,1.8rem)">
+    <div class="a" style="--d:.05s"><p class="lbl">Roadmap</p></div>
+    <div>
+      <div class="clip-wrap"><span class="clip-inner h2" style="--d:.1s">Del MVP</span></div>
+      <div class="clip-wrap"><span class="clip-inner h2 it em" style="--d:.2s">al producto completo.</span></div>
+    </div>
+    <div class="rm a" style="--d:.35s;margin-top:2rem">
+      <div class="rm-progress"></div>
+      <div class="rm-step">
+        <div class="rm-dot done"></div>
+        <p class="rm-phase">Q3 2026 — Actual</p>
+        <p class="rm-t">MVP Frontend</p>
+        <p class="rm-li">Landing editorial</p>
+        <p class="rm-li">Pre-Shoot + análisis mock</p>
+        <p class="rm-li">Live-Shoot con cámara</p>
+        <p class="rm-li">Model Simulator SVG</p>
+        <p class="rm-li">Deploy Netlify</p>
+      </div>
+      <div class="rm-step">
+        <div class="rm-dot"></div>
+        <p class="rm-phase">Q4 2026</p>
+        <p class="rm-t">Backend IA</p>
+        <p class="rm-li">API análisis de imagen real</p>
+        <p class="rm-li">Computer vision silueta</p>
+        <p class="rm-li">LLM recomendaciones</p>
+        <p class="rm-li">WebSocket Live-Shoot</p>
+      </div>
+      <div class="rm-step">
+        <div class="rm-dot"></div>
+        <p class="rm-phase">Q1 2027</p>
+        <p class="rm-t">Producto Completo</p>
+        <p class="rm-li">Outfit Styling module</p>
+        <p class="rm-li">Avatar 3D (Three.js)</p>
+        <p class="rm-li">App móvil PWA</p>
+        <p class="rm-li">Panel analytics</p>
+      </div>
+      <div class="rm-step">
+        <div class="rm-dot"></div>
+        <p class="rm-phase">Q2 2027</p>
+        <p class="rm-t">Escala &amp; API</p>
+        <p class="rm-li">API pública documentada</p>
+        <p class="rm-li">Integraciones e-commerce</p>
+        <p class="rm-li">White-label Enterprise</p>
+        <p class="rm-li">Expansión LATAM / España</p>
+      </div>
+      <div class="rm-step" style="padding-right:0">
+        <div class="rm-dot"></div>
+        <p class="rm-phase">Q3–Q4 2027</p>
+        <p class="rm-t">Serie A</p>
+        <p class="rm-li">200+ clientes activos</p>
+        <p class="rm-li">$1M ARR</p>
+        <p class="rm-li">Equipo de 12+</p>
+        <p class="rm-li">Rondas estratégicas</p>
+      </div>
+    </div>
+    <!-- Animated progress bar below -->
+    <div class="a" style="--d:.6s;margin-top:1rem">
+      <div style="width:100%;height:1px;background:rgba(200,190,178,.08);position:relative;overflow:hidden">
+        <div id="rm-fill" style="height:100%;background:var(--caramel);width:0;transition:width 1.6s cubic-bezier(0.22,1,0.36,1) .8s"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:.5rem">
+        <p class="body-xs">Inicio</p>
+        <p class="body-xs em">▲ Aquí</p>
+        <p class="body-xs">Serie A</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     10 — CTA / CIERRE
+══════════════════════════════════════ -->
+<section class="slide" id="s9">
+  <div class="bg-num" style="right:50%;transform:translateX(50%);opacity:.018;bottom:-8vh">10</div>
+  <!-- Animated glow -->
+  <div style="position:absolute;inset:0;pointer-events:none">
+    <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:60vw;height:60vw;background:radial-gradient(circle,rgba(166,123,91,.07) 0%,transparent 65%);animation:breathe 6s ease-in-out infinite alternate"></div>
+  </div>
+  <div class="col center-x full" style="gap:clamp(.8rem,2vw,1.6rem);align-items:center;text-align:center">
+    <div class="a" style="--d:.05s"><p class="lbl">¿Construimos juntos?</p></div>
+    <div>
+      <div class="clip-wrap" style="text-align:center"><span class="clip-inner h2" style="--d:.1s;display:block">La próxima sesión de moda</span></div>
+      <div class="clip-wrap" style="text-align:center"><span class="clip-inner h2 it em" style="--d:.2s;display:block">ya tiene IA.</span></div>
+    </div>
+    <div class="rule a" style="--d:.35s;margin:0 auto"></div>
+    <div class="a" style="--d:.45s">
+      <p class="body" style="max-width:44ch;margin:0 auto">
+        Buscamos inversores seed y marcas de moda early-adopters para co-desarrollar el backend de IA y lanzar la versión comercial en Q4 2026.
+      </p>
+    </div>
+    <div class="row a" style="--d:.55s;gap:clamp(1.2rem,3vw,3rem);justify-content:center;flex-wrap:wrap;margin-top:.5rem">
+      <div class="card col center-x" style="min-width:175px;align-items:center;padding:1.6rem 2.2rem">
+        <p class="lbl" style="margin-bottom:.55rem">Inversión buscada</p>
+        <p class="h3 em">$250,000 USD</p>
+        <p class="body-xs" style="text-align:center;margin-top:.4rem">Seed round — backend IA, equipo, GTM</p>
+      </div>
+      <div class="card col center-x" style="min-width:175px;align-items:center;padding:1.6rem 2.2rem">
+        <p class="lbl" style="margin-bottom:.55rem">Equity ofrecido</p>
+        <p class="h3 em">15 – 20%</p>
+        <p class="body-xs" style="text-align:center;margin-top:.4rem">A negociar según perfil del inversor</p>
+      </div>
+    </div>
+    <div class="a" style="--d:.7s;border-top:1px solid rgba(200,190,178,.1);padding-top:1.5rem;width:100%;display:flex;flex-direction:column;align-items:center;gap:.5rem;margin-top:.25rem">
+      <p class="lbl lbl-c">Contacto</p>
+      <p class="body" style="color:var(--white)">Bargueta · Shoot AI</p>
+      <p class="body-xs">github.com/Bargueta-2024358/front-shootAI-provisional</p>
+    </div>
+  </div>
+</section>
+
+</div><!-- /deck -->
+
+<div id="nav">
+  <button class="nb" id="btn-p">← prev</button>
+  <span id="counter"></span>
+  <button class="nb" id="btn-n">next →</button>
+</div>
+
+<style>
+@keyframes breathe {
+  from { transform: translate(-50%,-50%) scale(1);   opacity: .7; }
+  to   { transform: translate(-50%,-50%) scale(1.12); opacity: 1; }
+}
+</style>
+
+<script>
+/* ─── State ─────────────────────────────────────────────── */
+const slides = Array.from(document.querySelectorAll('.slide'))
+const total  = slides.length
+let cur = 0, busy = false
+
+/* ─── Cursor ─────────────────────────────────────────────── */
+const dot  = document.getElementById('cur')
+const ring = document.getElementById('cur-ring')
+let mx = -100, my = -100, rx = -100, ry = -100
+document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY })
+;(function trackCursor() {
+  rx += (mx - rx) * .15
+  ry += (my - ry) * .15
+  dot.style.left  = mx + 'px'; dot.style.top  = my + 'px'
+  ring.style.left = rx + 'px'; ring.style.top = ry + 'px'
+  requestAnimationFrame(trackCursor)
+})()
+
+/* ─── Curtain transition ─────────────────────────────────── */
+const curtain = document.getElementById('curtain')
+const SPEED   = 360
+
+function goTo(n) {
+  if (busy) return
+  n = ((n % total) + total) % total
+  if (n === cur) return
+  busy = true
+
+  curtain.style.transition = `transform ${SPEED}ms cubic-bezier(0.76,0,0.24,1)`
+  curtain.style.transform  = 'translateY(0)'
+
+  setTimeout(() => {
+    slides[cur].classList.remove('active')
+    cur = n
+    slides[cur].classList.add('active')
+    update()
+    postActivate(cur)
+
+    curtain.style.transform = 'translateY(-100%)'
+
+    setTimeout(() => {
+      curtain.style.transition = 'none'
+      curtain.style.transform  = 'translateY(100%)'
+      requestAnimationFrame(() => {
+        curtain.style.transition = ''
+        busy = false
+      })
+    }, SPEED + 60)
+  }, SPEED + 30)
+}
+
+/* ─── Per-slide post-activate ────────────────────────────── */
+function postActivate(idx) {
+  // Counter-up for stat-big elements
+  document.querySelectorAll(`#s${idx} [data-count]`).forEach(el => {
+    const target = parseFloat(el.dataset.count)
+    const prefix = el.dataset.prefix || ''
+    const suffix = el.dataset.suffix || ''
+    const dur    = 1300
+    const start  = performance.now()
+    function tick(now) {
+      const p = Math.min((now - start) / dur, 1)
+      const e = 1 - Math.pow(1 - p, 4)
+      el.textContent = prefix + (Number.isInteger(target) ? Math.round(e * target) : (e * target).toFixed(1)) + suffix
+      if (p < 1) requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+  })
+
+  // Roadmap progress bar
+  const rmFill = document.getElementById('rm-fill')
+  if (idx === 8 && rmFill) {
+    setTimeout(() => { rmFill.style.width = '22%' }, 100)
+  }
+}
+
+/* ─── Update UI ──────────────────────────────────────────── */
+function update() {
+  const c = String(cur + 1).padStart(2, '0')
+  const t = String(total).padStart(2, '0')
+  document.getElementById('counter').textContent  = `${c} / ${t}`
+  document.getElementById('slide-id').textContent = `${c} / ${t}`
+  document.getElementById('prog-bar').style.width = `${((cur + 1) / total) * 100}%`
+}
+
+/* ─── Events ─────────────────────────────────────────────── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo(cur + 1)
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goTo(cur - 1)
+})
+document.getElementById('btn-n').addEventListener('click', e => { e.stopPropagation(); goTo(cur + 1) })
+document.getElementById('btn-p').addEventListener('click', e => { e.stopPropagation(); goTo(cur - 1) })
+document.getElementById('deck').addEventListener('click', () => goTo(cur + 1))
+
+/* ─── Init ───────────────────────────────────────────────── */
+update()
+postActivate(0)
+</script>
+</body>
+</html>
