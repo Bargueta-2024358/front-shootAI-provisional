@@ -9,7 +9,7 @@ import { waitingMessages } from '../data/content'
 // En producción NO usar el timer fijo de 4 segundos — el cierre lo dispara
 // la respuesta del backend, no un setTimeout.
 
-const TOTAL_MS = 4000
+const TOTAL_MS = 5000
 // Distribute TOTAL_MS evenly across all messages
 const MSG_INTERVAL_MS = Math.floor(TOTAL_MS / waitingMessages.length)
 
