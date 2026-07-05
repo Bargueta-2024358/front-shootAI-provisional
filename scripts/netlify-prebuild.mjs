@@ -1,52 +1,47 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { execSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.join(__dirname, '..')
+const backendDir = path.join(root, '.backend')
+const localBackend = path.join(root, '..', 'server-shootAI')
+const backendRepo = 'https://github.com/xsiliezxr/server-shootai.git'
 
-const DEFAULT_BACKEND_URL = 'https://server-shootai.onrender.com'
-
-function readBackendUrl() {
-  const fromEnv = (process.env.BACKEND_URL || process.env.VITE_BACKEND_URL || '').trim()
-  if (fromEnv) return fromEnv.replace(/\/$/, '')
-
-  const urlFile = path.join(root, 'backend.url')
-  if (fs.existsSync(urlFile)) {
-    const fromFile = fs.readFileSync(urlFile, 'utf8').trim()
-    if (fromFile && !fromFile.startsWith('#')) {
-      return fromFile.replace(/\/$/, '')
-    }
+function prepareBackend() {
+  if (fs.existsSync(backendDir)) {
+    fs.rmSync(backendDir, { recursive: true, force: true })
   }
 
-  return DEFAULT_BACKEND_URL
+  if (fs.existsSync(localBackend)) {
+    console.log(`Using local backend: ${localBackend}`)
+    fs.cpSync(localBackend, backendDir, {
+      recursive: true,
+      filter: (src) => !src.includes(`${path.sep}node_modules${path.sep}`),
+    })
+  } else {
+    console.log(`Cloning backend: ${backendRepo}`)
+    execSync(`git clone --depth 1 ${backendRepo} "${backendDir}"`, {
+      stdio: 'inherit',
+    })
+  }
+
+  console.log('Installing backend dependencies...')
+  execSync('npm ci --omit=dev', { cwd: backendDir, stdio: 'inherit' })
 }
 
-const backendUrl = readBackendUrl()
-const spaFallback = '/*    /index.html   200'
-const lines = []
+prepareBackend()
 
-if (backendUrl) {
-  lines.push(`/api/*  ${backendUrl}/api/:splat  200`)
-  console.log(`Netlify proxy: /api/* -> ${backendUrl}/api/:splat`)
-
-  const configPath = path.join(root, 'public', 'config.json')
-  fs.writeFileSync(
-    configPath,
-    JSON.stringify(
-      {
-        apiBaseUrl: '/api',
-        backendUrl,
-      },
-      null,
-      2
-    ) + '\n',
-    'utf8'
-  )
-}
-
-lines.push(spaFallback)
+const configPath = path.join(root, 'public', 'config.json')
+fs.writeFileSync(
+  configPath,
+  `${JSON.stringify({ apiBaseUrl: '/api' }, null, 2)}\n`,
+  'utf8'
+)
 
 const redirectsPath = path.join(root, 'public', '_redirects')
 fs.mkdirSync(path.dirname(redirectsPath), { recursive: true })
-fs.writeFileSync(redirectsPath, lines.join('\n') + '\n', 'utf8')
+fs.writeFileSync(redirectsPath, '/*    /index.html   200\n', 'utf8')
+
+console.log('Netlify API: /api/* -> /.netlify/functions/api/:splat')

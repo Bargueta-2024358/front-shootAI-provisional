@@ -16,6 +16,7 @@ backend.url
 # Build
 dist
 dist-ssr
+.backend
 *.local
 
 # Editor

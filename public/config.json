@@ -1,4 +1,3 @@
 {
-  "apiBaseUrl": "/api",
-  "backendUrl": "https://server-shootai.onrender.com"
+  "apiBaseUrl": "/api"
 }
