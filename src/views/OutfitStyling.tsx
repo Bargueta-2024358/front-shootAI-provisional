@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Navbar from '../components/Navbar'
 import { WaitingOverlay } from './Waiting'
-import { apiFetch } from '../lib/api'
+import { apiJson } from '../lib/api'
 import { createFavorite, suggestFavoriteTheme } from '../lib/favoritesApi'
 import {
   clearShootSession,
@@ -339,20 +339,17 @@ export default function OutfitStyling() {
       setFromCache(false)
 
       try {
-        const res = await apiFetch(`/requirements/${activeProjectId}/process`, {
-          method: 'POST',
-          body: JSON.stringify({ limit: 8, gender }),
-        })
-        const json = await res.json()
-        if (!res.ok) {
-          throw new Error(json?.error?.message || 'Error al analizar outfits')
-        }
+        const data = await apiJson<Record<string, unknown>>(
+          `/requirements/${activeProjectId}/process`,
+          {
+            method: 'POST',
+            body: JSON.stringify({ limit: 8, gender }),
+          }
+        )
 
         if (cancelled) return
 
-        const { groups, matchPercentage: matchPct } = normalizeOutfitsResponse(
-          json.data || {}
-        )
+        const { groups, matchPercentage: matchPct } = normalizeOutfitsResponse(data || {})
         setOutfitsByCategory(groups)
         setMatchPercentage(matchPct)
 

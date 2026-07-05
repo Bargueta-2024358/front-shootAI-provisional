@@ -5,7 +5,9 @@
 [build.environment]
   NODE_VERSION = "20"
   NPM_CONFIG_PRODUCTION = "false"
-  VITE_API_URL = "/api"
+  BACKEND_URL = "https://server-shootai.onrender.com"
+  VITE_BACKEND_URL = "https://server-shootai.onrender.com"
+  VITE_API_URL = "https://server-shootai.onrender.com/api"
   VITE_SUPABASE_URL = "https://qoukpzswuqihnzqhupkq.supabase.co"
   VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFvdWtwenN3dXFpaG56cWh1cGtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxOTUzNDksImV4cCI6MjA5ODc3MTM0OX0.t3Gx-l91DcoYrptYvPUuNbEti4JSIeCizhxMgCZYgLo"
 

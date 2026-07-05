@@ -5,7 +5,7 @@ import Navbar from '../components/Navbar'
 import ModuleNavBar from '../components/ModuleNavBar'
 import { WaitingOverlay } from './Waiting'
 import { useAuth } from '../context/AuthContext'
-import { apiFetch } from '../lib/api'
+import { apiJson } from '../lib/api'
 import {
   loadPreShootState,
   savePreShootState,
@@ -433,38 +433,30 @@ export default function PreShoot() {
         }
       }
 
-      const saveRes = await apiFetch('/requirements', {
+      const saveData = await apiJson<{ projectId: string }>('/requirements', {
         method: 'POST',
         body: formData,
       })
-      const saveJson = await saveRes.json()
-      if (!saveRes.ok) {
-        throw new Error(saveJson?.error?.message || 'Error al guardar los requerimientos')
-      }
 
-      const projectIdFromSave = saveJson.data?.projectId
+      const projectIdFromSave = saveData?.projectId
       if (!projectIdFromSave) {
         throw new Error('No se recibió projectId del servidor')
       }
 
       setProjectId(projectIdFromSave)
 
-      const categoriesRes = await apiFetch(
-        `/requirements/${projectIdFromSave}/categories`,
-        {
-          method: 'POST',
-          body: JSON.stringify({ gender: profileGender }),
-        }
-      )
-      const categoriesJson = await categoriesRes.json()
-      if (!categoriesRes.ok) {
-        throw new Error(categoriesJson?.error?.message || 'Error al detectar categorías')
-      }
+      const categoriesData = await apiJson<{
+        tags?: string[]
+        extractedCategories?: string[]
+        aestheticTags?: string[]
+      }>(`/requirements/${projectIdFromSave}/categories`, {
+        method: 'POST',
+        body: JSON.stringify({ gender: profileGender }),
+      })
 
-      const data = categoriesJson.data
-      const tags: string[] = data.tags || [
-        ...(data.extractedCategories || []),
-        ...(data.aestheticTags || []),
+      const tags: string[] = categoriesData.tags || [
+        ...(categoriesData.extractedCategories || []),
+        ...(categoriesData.aestheticTags || []),
       ]
 
       setCategoryResult({ tags })

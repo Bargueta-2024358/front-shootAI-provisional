@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.join(__dirname, '..')
 
+const DEFAULT_BACKEND_URL = 'https://server-shootai.onrender.com'
+
 function readBackendUrl() {
   const fromEnv = (process.env.BACKEND_URL || process.env.VITE_BACKEND_URL || '').trim()
   if (fromEnv) return fromEnv.replace(/\/$/, '')
@@ -17,7 +19,7 @@ function readBackendUrl() {
     }
   }
 
-  return ''
+  return DEFAULT_BACKEND_URL
 }
 
 const backendUrl = readBackendUrl()
@@ -31,12 +33,15 @@ if (backendUrl) {
   const configPath = path.join(root, 'public', 'config.json')
   fs.writeFileSync(
     configPath,
-    JSON.stringify({ apiBaseUrl: '/api', backendUrl }, null, 2) + '\n',
+    JSON.stringify(
+      {
+        apiBaseUrl: `${backendUrl.replace(/\/$/, '')}/api`,
+        backendUrl,
+      },
+      null,
+      2
+    ) + '\n',
     'utf8'
-  )
-} else {
-  console.warn(
-    'BACKEND_URL not set — profile/favoritos usan Supabase directo. Para outfits, define BACKEND_URL en Netlify o crea backend.url'
   )
 }
 
