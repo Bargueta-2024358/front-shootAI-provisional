@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Navbar from '../components/Navbar'
+import AIChatSidebar from '../components/AIChatSidebar'
+
+// Navbar height in px — keep in sync with h-20 in Navbar.tsx
+const NAVBAR_H = 80
 
 // ---------------------------------------------------------------------------
 // CameraFeed
@@ -39,6 +43,7 @@ function CameraFeed() {
 
     startCamera()
 
+    // Cleanup: stop all tracks so the camera light turns off when leaving the view
     return () => {
       stream?.getTracks().forEach((track) => track.stop())
     }
@@ -48,48 +53,37 @@ function CameraFeed() {
 
   return (
     <div className="relative h-full w-full bg-black">
-      {/* Live feed */}
       <video
         ref={videoRef}
         autoPlay
         muted
         playsInline
-        className={`h-full w-full object-cover transition-opacity duration-500 ${status === 'active' ? 'opacity-100' : 'opacity-0'}`}
+        className={`h-full w-full object-cover transition-opacity duration-500 ${
+          status === 'active' ? 'opacity-100' : 'opacity-0'
+        }`}
         aria-label="Feed de cámara en tiempo real"
       />
 
-      {/* Loading state */}
+      {/* Loading */}
       {status === 'loading' && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
           <span className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-charcoal border-t-caramel" />
-          <p className="font-body text-xs tracking-wide text-mid-gray">
-            Iniciando cámara…
-          </p>
+          <p className="font-body text-xs tracking-wide text-mid-gray">Iniciando cámara…</p>
         </div>
       )}
 
-      {/* Error state */}
+      {/* Error — centered within the video area, not the full viewport */}
       {isError && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-8 text-center">
-          <svg
-            className="text-charcoal"
-            width="40"
-            height="40"
-            viewBox="0 0 40 40"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            aria-hidden
-          >
+          <svg className="text-charcoal" width="40" height="40" viewBox="0 0 40 40"
+            fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
             <circle cx="20" cy="20" r="17" />
             <path d="M14 14l12 12M26 14L14 26" strokeLinecap="round" />
           </svg>
           <p className="font-display text-sm tracking-wide text-white">
-            {status === 'denied'
-              ? 'Permiso de cámara denegado.'
-              : 'No se pudo acceder a la cámara.'}
+            {status === 'denied' ? 'Permiso de cámara denegado.' : 'No se pudo acceder a la cámara.'}
           </p>
-          <p className="font-body text-xs leading-relaxed text-charcoal">
+          <p className="font-body text-xs leading-relaxed text-charcoal max-w-xs">
             {status === 'denied'
               ? 'Verifica los permisos en la configuración de tu navegador y recarga la página.'
               : 'Asegúrate de que hay una cámara conectada y disponible.'}
@@ -97,9 +91,9 @@ function CameraFeed() {
         </div>
       )}
 
-      {/* Live indicator (only when active) */}
+      {/* Live indicator */}
       {status === 'active' && (
-        <div className="absolute left-4 top-4 flex items-center gap-2" aria-label="Cámara activa">
+        <div className="absolute left-4 top-4 z-10 flex items-center gap-2" aria-label="Cámara activa">
           <span className="relative flex h-2.5 w-2.5">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-caramel opacity-60" />
             <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-caramel" />
@@ -109,33 +103,58 @@ function CameraFeed() {
           </span>
         </div>
       )}
+
+      {/* Title overlay — bottom-left with gradient */}
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/60 to-transparent px-6 pb-16 pt-24 md:px-8 md:pb-20"
+        aria-hidden
+      >
+        <p className="font-display text-2xl font-semibold tracking-wide text-white text-shadow-hero md:text-3xl">
+          Live-Shoot
+        </p>
+        <p className="mt-1 font-display text-[10px] tracking-[0.35em] uppercase text-white/60">
+          Módulo 02
+        </p>
+      </div>
+
+      {/* Navigation buttons — overlay strip at the very bottom */}
+      <NavBar />
     </div>
   )
 }
 
 // ---------------------------------------------------------------------------
-// NavButton
+// NavBar — overlay strip with navigation buttons
 // ---------------------------------------------------------------------------
 
-interface NavButtonProps {
-  label: string
-  to: string
-  delay?: number
-}
-
-function NavButton({ label, to, delay = 0 }: NavButtonProps) {
+function NavBar() {
   const navigate = useNavigate()
+
+  const buttons = [
+    { label: 'Model Simulator', to: '/model-simulator', delay: 0.1 },
+    { label: 'Outfit Styling',  to: '/outfit-styling',  delay: 0.17 },
+    { label: 'Pre-Shoot',       to: '/pre-shoot',       delay: 0.24 },
+  ]
+
   return (
-    <motion.button
-      type="button"
-      initial={{ opacity: 0, y: 16 }}
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, ease: 'easeOut', delay }}
-      className="interactive flex-1 border border-black px-6 py-4 font-display text-xs tracking-[0.2em] uppercase transition-all duration-300 hover:border-caramel hover:bg-caramel hover:text-white focus-visible:border-caramel focus-visible:bg-caramel focus-visible:text-white"
-      onClick={() => navigate(to)}
+      transition={{ duration: 0.5, delay: 0.3 }}
+      className="absolute inset-x-0 bottom-0 z-20 flex backdrop-blur-sm"
+      style={{ backgroundColor: 'rgba(17,17,17,0.55)' }}
     >
-      {label}
-    </motion.button>
+      {buttons.map((btn) => (
+        <button
+          key={btn.to}
+          type="button"
+          onClick={() => navigate(btn.to)}
+          className="flex-1 border-r border-white/10 py-3 font-display text-[10px] tracking-[0.18em] uppercase text-white/70 transition-colors duration-200 last:border-r-0 hover:bg-white/10 hover:text-white focus-visible:bg-white/10 focus-visible:text-white"
+        >
+          {btn.label}
+        </button>
+      ))}
+    </motion.div>
   )
 }
 
@@ -148,53 +167,36 @@ export default function LiveShoot() {
     <>
       <Navbar />
 
-      {/* Dark header */}
-      <div className="bg-black pt-20">
-        <div className="mx-auto max-w-[1400px] px-6 pb-10 pt-16 md:px-10 md:pt-20">
-          <p className="font-display text-xs tracking-[0.4em] text-mid-gray uppercase">
-            Módulo 02
-          </p>
-          <h1 className="mt-3 font-display text-[clamp(2.8rem,6vw,5rem)] font-semibold leading-[0.9] tracking-wide text-white">
-            Live-Shoot
-          </h1>
-          <p className="mt-5 max-w-xl font-body text-base leading-relaxed text-charcoal">
-            Visualiza la sesión en tiempo real directamente desde la cámara conectada.
-            Navega a los módulos de análisis desde los controles inferiores.
-          </p>
-        </div>
-      </div>
+      {/*
+        Full-height studio layout:
+        - pt-20 pushes content below the fixed navbar (h-20 = 80px)
+        - h-screen ensures the entire viewport is used
+        - flex-col on mobile → flex-row on desktop
+      */}
+      <main
+        className="flex flex-col bg-black md:flex-row"
+        style={{ height: `calc(100vh - ${NAVBAR_H}px)`, marginTop: NAVBAR_H }}
+      >
+        {/* Camera area — 75% width desktop, full + 60vh mobile */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="relative h-[60vh] w-full shrink-0 md:h-full md:flex-1"
+        >
+          <CameraFeed />
+        </motion.div>
 
-      <main className="bg-white">
-        <div className="mx-auto flex max-w-[1400px] flex-col items-center px-6 py-16 md:px-10 md:py-20">
-
-          {/* Camera square */}
-          <motion.div
-            initial={{ opacity: 0, y: 32 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
-            className="relative w-full max-w-[min(90vh,900px)] overflow-hidden border border-black/10 shadow-2xl"
-            style={{ aspectRatio: '1 / 1' }}
-          >
-            {/* "Live-Shoot" overlay title */}
-            <div
-              className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/70 to-transparent px-8 pb-8 pt-20"
-              aria-hidden
-            >
-              <p className="font-display text-[clamp(1.5rem,4vw,2.8rem)] font-semibold tracking-wide text-white text-shadow-hero">
-                Live-Shoot
-              </p>
-            </div>
-
-            <CameraFeed />
-          </motion.div>
-
-          {/* Navigation buttons */}
-          <div className="mt-8 flex w-full max-w-[min(90vh,900px)] flex-col gap-3 sm:flex-row">
-            <NavButton label="Model Simulator" to="/model-simulator" delay={0.15} />
-            <NavButton label="Outfit Styling"  to="/outfit-styling"  delay={0.22} />
-            <NavButton label="Pre-Shoot"       to="/pre-shoot"       delay={0.29} />
-          </div>
-        </div>
+        {/* AI Chat Sidebar — 25% desktop, auto-height mobile */}
+        <motion.div
+          initial={{ opacity: 0, x: 24 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+          className="w-full border-t border-white/10 md:h-full md:w-[320px] md:shrink-0 md:border-l md:border-t-0 lg:w-[360px]"
+          style={{ maxHeight: `calc(100vh - ${NAVBAR_H}px)` }}
+        >
+          <AIChatSidebar />
+        </motion.div>
       </main>
     </>
   )

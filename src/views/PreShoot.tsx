@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Navbar from '../components/Navbar'
+import { WaitingOverlay } from './Waiting'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -25,29 +26,61 @@ interface AnalysisResult {
 // debe devolver { recommendations, matchPercentage, colorPalette })
 // ---------------------------------------------------------------------------
 
-const MOCK_RESULT: AnalysisResult = {
-  recommendations: [
-    {
-      label: 'Blazer estructurado',
-      description: 'Silueta de hombros marcados para equilibrar las proporciones y proyectar autoridad editorial.',
-    },
-    {
-      label: 'Pantalón de tiro alto',
-      description: 'Alarga visualmente la figura y crea una línea limpia que favorece el plano medio.',
-    },
-    {
-      label: 'Tejido fluido monocromático',
-      description: 'Reduce la fragmentación visual y permite que la pose y la luz sean los protagonistas.',
-    },
-  ],
-  matchPercentage: 87,
-  colorPalette: [
-    { hex: '#2C2C2C', name: 'Grafito editorial' },
-    { hex: '#C8B8A2', name: 'Arena cálida' },
-    { hex: '#E8E0D5', name: 'Blanco roto' },
-    { hex: '#6B4F3A', name: 'Caoba profundo' },
-  ],
-}
+const MOCK_RECOMMENDATIONS = [
+  {
+    label: 'Blazer estructurado',
+    description: 'Silueta de hombros marcados para equilibrar las proporciones y proyectar autoridad editorial.',
+  },
+  {
+    label: 'Pantalón de tiro alto',
+    description: 'Alarga visualmente la figura y crea una línea limpia que favorece el plano medio.',
+  },
+  {
+    label: 'Tejido fluido monocromático',
+    description: 'Reduce la fragmentación visual y permite que la pose y la luz sean los protagonistas.',
+  },
+]
+
+// TODO: paleta de color real → reemplazar con análisis de color dominante
+// de la imagen cuando el backend esté disponible.
+const MOCK_PALETTES: { colors: { hex: string; name: string }[]; matchPercentage: number }[] = [
+  {
+    matchPercentage: 87,
+    colors: [
+      { hex: '#2C2C2C', name: 'Grafito editorial' },
+      { hex: '#C8B8A2', name: 'Arena cálida' },
+      { hex: '#E8E0D5', name: 'Blanco roto' },
+      { hex: '#6B4F3A', name: 'Caoba profundo' },
+    ],
+  },
+  {
+    matchPercentage: 82,
+    colors: [
+      { hex: '#3D4A5C', name: 'Pizarra nórdica' },
+      { hex: '#B8C4D0', name: 'Niebla ártica' },
+      { hex: '#8BA3B0', name: 'Cobre helado' },
+      { hex: '#F0F4F7', name: 'Blanco glacial' },
+    ],
+  },
+  {
+    matchPercentage: 91,
+    colors: [
+      { hex: '#C4704A', name: 'Terracota viva' },
+      { hex: '#D4944A', name: 'Azafrán editorial' },
+      { hex: '#F2DDB0', name: 'Crema solar' },
+      { hex: '#8B5030', name: 'Tierra siena' },
+    ],
+  },
+  {
+    matchPercentage: 79,
+    colors: [
+      { hex: '#1A1A1A', name: 'Negro absoluto' },
+      { hex: '#A82837', name: 'Carmesí editorial' },
+      { hex: '#F8F5EE', name: 'Marfil puro' },
+      { hex: '#9E6B3A', name: 'Cobre bruñido' },
+    ],
+  },
+]
 
 // ---------------------------------------------------------------------------
 // AnalysisPanel
@@ -68,7 +101,7 @@ function AnalysisPanel({ result, loading }: AnalysisPanelProps) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 16 }}
           transition={{ duration: 0.55, ease: 'easeOut' }}
-          className="flex flex-col gap-8"
+          className="flex flex-col gap-6"
         >
           <div className="border-t border-silver pt-6">
             <p className="font-display text-xs tracking-[0.35em] uppercase text-mid-gray">
@@ -88,56 +121,65 @@ function AnalysisPanel({ result, loading }: AnalysisPanelProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.4, delay: 0.1 }}
-              className="flex flex-col gap-10"
+              className="flex flex-col gap-6"
             >
-              {/* Match percentage */}
-              <div>
-                <p className="font-display text-xs tracking-[0.3em] uppercase text-mid-gray mb-3">
+              {/* Match percentage — dark card */}
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.15 }}
+                className="rounded-sm p-5"
+                style={{ backgroundColor: '#7A5A40' }}
+              >
+                <p className="font-display text-xs tracking-[0.3em] uppercase text-white/60 mb-3">
                   Compatibilidad de silueta
                 </p>
                 <div className="flex items-end gap-3">
-                  <span className="font-display text-5xl font-semibold text-black leading-none">
+                  <span className="font-display text-5xl font-semibold text-white leading-none">
                     {result.matchPercentage}
-                    <span className="text-2xl text-caramel">%</span>
+                    <span className="text-2xl text-[#EEDFC9]">%</span>
                   </span>
-                  <span className="font-body text-sm text-charcoal mb-1">de match</span>
+                  <span className="font-body text-sm text-white/70 mb-1">de match</span>
                 </div>
-                <div className="mt-3 h-1 w-full rounded-full bg-smoke overflow-hidden">
+                <div className="mt-4 h-1 w-full rounded-full bg-white/20 overflow-hidden">
                   <motion.div
-                    className="h-full rounded-full bg-caramel"
+                    className="h-full rounded-full bg-white"
                     initial={{ width: 0 }}
                     animate={{ width: `${result.matchPercentage}%` }}
-                    transition={{ duration: 0.9, ease: 'easeOut', delay: 0.2 }}
+                    transition={{ duration: 0.9, ease: 'easeOut', delay: 0.25 }}
                   />
                 </div>
-              </div>
+              </motion.div>
 
-              {/* Recommendations */}
+              {/* Recommendations — dark cards */}
               <div>
-                <p className="font-display text-xs tracking-[0.3em] uppercase text-mid-gray mb-4">
+                <p className="font-display text-xs tracking-[0.3em] uppercase text-mid-gray mb-3">
                   Recomendación de prendas
                 </p>
-                <ul className="flex flex-col gap-4">
+                <div className="flex flex-col gap-3">
                   {result.recommendations.map((rec, i) => (
-                    <motion.li
+                    <motion.div
                       key={rec.label}
-                      initial={{ opacity: 0, x: -12 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.4, delay: 0.25 + i * 0.08 }}
-                      className="flex gap-4 border-b border-smoke pb-4 last:border-b-0 last:pb-0"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, delay: 0.25 + i * 0.1 }}
+                      className="rounded-sm p-5"
+                      style={{ backgroundColor: '#7A5A40' }}
                     >
-                      <span className="mt-1 font-display text-xs text-caramel select-none">
-                        {String(i + 1).padStart(2, '0')}
-                      </span>
-                      <div>
-                        <p className="font-display text-sm font-medium text-black">{rec.label}</p>
-                        <p className="mt-1 font-body text-sm leading-relaxed text-charcoal">
-                          {rec.description}
-                        </p>
+                      <div className="flex gap-3 items-start">
+                        <span className="font-display text-xs text-[#EEDFC9] select-none mt-0.5 shrink-0">
+                          {String(i + 1).padStart(2, '0')}
+                        </span>
+                        <div>
+                          <p className="font-display text-sm font-medium text-white">{rec.label}</p>
+                          <p className="mt-1 font-body text-sm leading-relaxed text-white/75">
+                            {rec.description}
+                          </p>
+                        </div>
                       </div>
-                    </motion.li>
+                    </motion.div>
                   ))}
-                </ul>
+                </div>
               </div>
 
               {/* Color palette */}
@@ -210,12 +252,11 @@ function ImageDropzone({ images, onAdd, onRemove }: ImageDropzoneProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Drop area */}
       <div
         role="button"
         tabIndex={0}
         aria-label="Zona de carga de imágenes. Arrastra o haz clic para seleccionar."
-        className={`interactive relative flex min-h-[220px] cursor-pointer flex-col items-center justify-center gap-4 border border-dashed transition-colors duration-200 ${
+        className={`relative flex min-h-[220px] cursor-pointer flex-col items-center justify-center gap-4 border border-dashed transition-colors duration-200 ${
           dragging
             ? 'border-caramel bg-caramel/5'
             : 'border-silver bg-smoke/40 hover:border-charcoal hover:bg-smoke/70'
@@ -235,22 +276,15 @@ function ImageDropzone({ images, onAdd, onRemove }: ImageDropzoneProps) {
           onChange={handleChange}
           aria-hidden
         />
-
         <svg
           className={`transition-colors duration-200 ${dragging ? 'text-caramel' : 'text-mid-gray'}`}
-          width="36"
-          height="36"
-          viewBox="0 0 36 36"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          aria-hidden
+          width="36" height="36" viewBox="0 0 36 36"
+          fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden
         >
           <rect x="3" y="7" width="30" height="22" rx="2" />
           <circle cx="13" cy="16" r="3" />
           <path d="M3 25l8-6 6 5 5-4 11 8" />
         </svg>
-
         <div className="text-center px-6">
           <p className="font-display text-sm tracking-wide text-black">
             {dragging ? 'Suelta las imágenes aquí' : 'Arrastra imágenes o haz clic para seleccionar'}
@@ -261,7 +295,6 @@ function ImageDropzone({ images, onAdd, onRemove }: ImageDropzoneProps) {
         </div>
       </div>
 
-      {/* Thumbnails grid */}
       <AnimatePresence initial={false}>
         {images.length > 0 && (
           <motion.div
@@ -293,7 +326,7 @@ function ImageDropzone({ images, onAdd, onRemove }: ImageDropzoneProps) {
                   <button
                     type="button"
                     aria-label={`Eliminar ${img.file.name}`}
-                    className="interactive absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-caramel focus-visible:opacity-100"
+                    className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-caramel focus-visible:opacity-100"
                     onClick={() => onRemove(img.id)}
                   >
                     <span className="text-xs leading-none">×</span>
@@ -316,8 +349,10 @@ export default function PreShoot() {
   const [images, setImages] = useState<ImageFile[]>([])
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
   const [analyzing, setAnalyzing] = useState(false)
+  // BOTÓN PROVISIONAL - eliminar cuando el flujo real de espera esté
+  // conectado al backend y se dispare automáticamente al procesar la imagen.
+  const [showWaiting, setShowWaiting] = useState(false)
 
-  // Revoke all object URLs on unmount
   useEffect(() => {
     return () => {
       images.forEach((img) => URL.revokeObjectURL(img.previewUrl))
@@ -352,12 +387,17 @@ export default function PreShoot() {
     setAnalyzing(true)
     setAnalysisResult(null)
     setTimeout(() => {
+      // TODO: paleta aleatoria → reemplazar por análisis real de color dominante
+      const picked = MOCK_PALETTES[Math.floor(Math.random() * MOCK_PALETTES.length)]
       setAnalyzing(false)
-      setAnalysisResult(MOCK_RESULT)
+      setAnalysisResult({
+        recommendations: MOCK_RECOMMENDATIONS,
+        matchPercentage: picked.matchPercentage,
+        colorPalette: picked.colors,
+      })
     }, 1800)
   }
 
-  // Debounced trigger so rapid adds don't spam analysis
   const analysisTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   function triggerAnalysis() {
     if (analysisTimer.current) clearTimeout(analysisTimer.current)
@@ -368,7 +408,14 @@ export default function PreShoot() {
     <>
       <Navbar />
 
-      {/* Dark page header — gives context for the transparent navbar */}
+      {/* BOTÓN PROVISIONAL - eliminar cuando el flujo real de espera esté
+          conectado al backend y se dispare automáticamente al procesar la imagen. */}
+      <WaitingOverlay
+        isOpen={showWaiting}
+        onComplete={() => setShowWaiting(false)}
+        hideCancelButton={false}
+      />
+
       <div className="bg-black pt-20">
         <div className="mx-auto max-w-[1400px] px-6 pb-14 pt-16 md:px-10 md:pt-20">
           <p className="font-display text-xs tracking-[0.4em] text-mid-gray uppercase">
@@ -384,7 +431,6 @@ export default function PreShoot() {
         </div>
       </div>
 
-      {/* Main content */}
       <main className="bg-white">
         <div className="mx-auto max-w-[1400px] px-6 py-16 md:px-10 md:py-20">
           <div className="flex flex-col gap-12 lg:flex-row lg:gap-16 lg:items-start">
@@ -402,27 +448,25 @@ export default function PreShoot() {
                 </p>
               </div>
 
-              <ImageDropzone
-                images={images}
-                onAdd={handleAdd}
-                onRemove={handleRemove}
-              />
+              <ImageDropzone images={images} onAdd={handleAdd} onRemove={handleRemove} />
+
+              {/* BOTÓN PROVISIONAL - eliminar cuando el flujo real de espera esté
+                  conectado al backend y se dispare automáticamente al procesar la imagen. */}
+              <button
+                type="button"
+                className="mt-6 border border-silver px-4 py-2 font-display text-[10px] tracking-[0.2em] uppercase text-mid-gray transition-colors hover:border-caramel hover:text-caramel"
+                onClick={() => setShowWaiting(true)}
+              >
+                Ver pantalla de espera (demo)
+              </button>
             </div>
 
             {/* Right — Analysis panel */}
             <div className="w-full lg:w-[45%] xl:w-[40%] lg:sticky lg:top-28">
               {images.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-3 border border-dashed border-silver py-16 text-center">
-                  <svg
-                    className="text-silver"
-                    width="32"
-                    height="32"
-                    viewBox="0 0 32 32"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    aria-hidden
-                  >
+                  <svg className="text-silver" width="32" height="32" viewBox="0 0 32 32"
+                    fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
                     <circle cx="16" cy="16" r="13" />
                     <path d="M16 10v6M16 20v2" strokeLinecap="round" />
                   </svg>
