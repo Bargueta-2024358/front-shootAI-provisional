@@ -1,6 +1,10 @@
 const path = require('node:path')
 const serverless = require('serverless-http')
 
+if (typeof global.WebSocket === 'undefined') {
+  global.WebSocket = require('ws')
+}
+
 const runtimeDefaults = {
   SUPABASE_URL: 'https://qoukpzswuqihnzqhupkq.supabase.co',
   SUPABASE_ANON_KEY:
