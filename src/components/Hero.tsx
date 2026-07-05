@@ -6,14 +6,12 @@ interface HeroHalfProps {
   title: string
   href: string
   videoSrc: string
-  posterSrc: string
   side: 'left' | 'right'
 }
 
-function HeroHalf({ title, href, videoSrc, posterSrc }: HeroHalfProps) {
+function HeroHalf({ title, href, videoSrc }: HeroHalfProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [playing, setPlaying] = useState(false)
-  const [hovered, setHovered] = useState(false)
   const fullyLoaded = useRef(false)
   const prefersReducedMotion =
     typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -27,31 +25,34 @@ function HeroHalf({ title, href, videoSrc, posterSrc }: HeroHalfProps) {
   }, [])
 
   const handleEnter = useCallback(() => {
-    setHovered(true)
     ensureLoaded()
     if (prefersReducedMotion) return
     const video = videoRef.current
     if (!video) return
-    const playPromise = video.play()
-    if (playPromise !== undefined) {
-      playPromise.then(() => setPlaying(true)).catch(() => setPlaying(false))
-    }
+    video.muted = true
+    video.play()
+      .then(() => setPlaying(true))
+      .catch(() => {/* autoplay blocked */})
   }, [ensureLoaded, prefersReducedMotion])
 
   const handleLeave = useCallback(() => {
-    setHovered(false)
-    const video = videoRef.current
-    if (!video) return
-    video.pause()
     setPlaying(false)
+    videoRef.current?.pause()
   }, [])
 
-  const toggleMobile = useCallback(() => {
+  // Mobile: tap the panel to toggle play (no hover on touch)
+  const handleMobileTap = useCallback((e: React.MouseEvent) => {
+    if (window.innerWidth >= 768) return
+    const t = e.target as HTMLElement
+    if (t.closest('a')) return          // let the Link navigate
     ensureLoaded()
     const video = videoRef.current
     if (!video) return
+    video.muted = true
     if (video.paused) {
-      video.play().then(() => setPlaying(true)).catch(() => setPlaying(false))
+      video.play()
+        .then(() => setPlaying(true))
+        .catch(() => {})
     } else {
       video.pause()
       setPlaying(false)
@@ -60,63 +61,57 @@ function HeroHalf({ title, href, videoSrc, posterSrc }: HeroHalfProps) {
 
   return (
     <div
-      className="interactive group relative h-[50vh] w-full overflow-hidden md:h-screen md:w-1/2"
+      className="group relative h-[50vh] w-full overflow-hidden md:h-screen md:w-1/2"
+      style={{ background: 'linear-gradient(135deg, #1a1209 0%, #0d0d0d 60%, #1c1510 100%)' }}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
       onFocus={handleEnter}
       onBlur={handleLeave}
-      onClick={(e) => {
-        // On mobile, only toggle video when tapping the raw panel area —
-        // not when the tap lands on a <a>/<button> (they handle themselves).
-        if (window.innerWidth < 768) {
-          const t = e.target as HTMLElement
-          if (!t.closest('a') && !t.closest('button')) toggleMobile()
-        }
-      }}
+      onClick={handleMobileTap}
       role="region"
       aria-label={title}
     >
       <video
         ref={videoRef}
         className={`absolute inset-0 h-full w-full object-cover transition-all duration-[250ms] ${
-          hovered && !prefersReducedMotion ? 'scale-105 opacity-100 blur-0' : 'scale-100 opacity-80 blur-[1px]'
+          playing && !prefersReducedMotion ? 'scale-105 opacity-100' : 'scale-100 opacity-0'
         }`}
         src={videoSrc}
-        poster={posterSrc}
         muted
         loop
         playsInline
-        preload="metadata"
+        preload="none"
         aria-hidden
       />
 
-      <div className="absolute inset-0 bg-black/30 transition-colors duration-[250ms] group-hover:bg-black/10" />
+      <div className="absolute inset-0 bg-black/20 transition-colors duration-[250ms] group-hover:bg-black/10" />
 
       {/*
-        Single navigable block: Link wraps both title and "Descubrir".
-        - border-transparent by default (same width) → no layout jump on hover.
-        - hover/focus-visible: caramel border outline.
-        - stopPropagation prevents the outer div's onClick from firing
-          when this link is tapped on mobile.
+        Navigation block: white text at rest.
+        On hover of THIS block → white background + caramel text (group/label).
       */}
       <Link
         to={href}
-        className="interactive group/label absolute bottom-8 left-8 z-10 border border-transparent px-3 py-2 transition-all duration-300 hover:border-caramel focus-visible:border-caramel focus-visible:outline-none md:bottom-12 md:left-12"
+        className="interactive group/label absolute bottom-8 left-8 z-10 bg-transparent px-3 py-2
+                   transition-all duration-300
+                   hover:bg-white focus-visible:bg-white focus-visible:outline-none
+                   md:bottom-12 md:left-12"
         onClick={(e) => e.stopPropagation()}
       >
         <p
-          className={`font-display text-xs tracking-[0.3em] uppercase transition-colors duration-[250ms] md:text-sm ${
-            hovered ? 'text-caramel' : 'text-white'
-          }`}
+          className="font-display text-xs tracking-[0.3em] uppercase text-white
+                     transition-colors duration-[250ms]
+                     group-hover/label:text-[#7A5A40]
+                     md:text-sm"
         >
           {title}
         </p>
 
-        {/* "Descubrir" with animated underline on hover */}
         <span
-          className={`relative mt-1 inline-block font-display italic text-base transition-colors duration-[250ms] md:text-lg ${
-            hovered ? 'text-caramel' : 'text-white'
-          }`}
+          className="relative mt-1 inline-block font-display italic text-base text-white
+                     transition-colors duration-[250ms]
+                     group-hover/label:text-[#7A5A40]
+                     md:text-lg"
         >
           Descubrir
           <motion.span
@@ -128,28 +123,6 @@ function HeroHalf({ title, href, videoSrc, posterSrc }: HeroHalfProps) {
           />
         </span>
       </Link>
-
-      {/* Play/pause button — stopPropagation prevents outer div onClick */}
-      <button
-        type="button"
-        className="interactive absolute bottom-8 right-8 z-10 text-white/80 transition-colors hover:text-caramel focus-visible:text-caramel md:bottom-12 md:right-12"
-        aria-label={playing ? 'Pausar video' : 'Reproducir video'}
-        onClick={(e) => {
-          e.stopPropagation()
-          toggleMobile()
-        }}
-      >
-        {playing ? (
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor" aria-hidden>
-            <rect x="3" y="2" width="4" height="14" rx="0.5" />
-            <rect x="11" y="2" width="4" height="14" rx="0.5" />
-          </svg>
-        ) : (
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor" aria-hidden>
-            <path d="M4 2.5v13l11-6.5L4 2.5z" />
-          </svg>
-        )}
-      </button>
     </div>
   )
 }
@@ -160,15 +133,13 @@ export default function Hero() {
       <HeroHalf
         title="Pre-Shoot"
         href="/pre-shoot"
-        videoSrc="/videos/pre-shoot.mp4"
-        posterSrc="/videos/pre-shoot-poster.jpg"
+        videoSrc="/videos/pre-shoot.webm"
         side="left"
       />
       <HeroHalf
         title="Live-Shoot"
         href="/live-shoot"
-        videoSrc="/videos/live-shoot.mp4"
-        posterSrc="/videos/live-shoot-poster.jpg"
+        videoSrc="/videos/live-shoot.webm"
         side="right"
       />
 

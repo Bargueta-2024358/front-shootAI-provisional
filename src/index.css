@@ -20,6 +20,22 @@
   .text-shadow-hero {
     text-shadow: 0 2px 24px rgba(0, 0, 0, 0.45);
   }
+
+  /* Caramel custom scrollbar — used in PreShoot recommendation cards */
+  .scroll-caramel {
+    scrollbar-width: thin;
+    scrollbar-color: #A67B5B transparent;
+  }
+  .scroll-caramel::-webkit-scrollbar {
+    width: 6px;
+  }
+  .scroll-caramel::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scroll-caramel::-webkit-scrollbar-thumb {
+    background-color: #A67B5B;
+    border-radius: 4px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

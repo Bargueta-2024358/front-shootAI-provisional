@@ -13,6 +13,7 @@ export default {
         charcoal: '#666666',
         black: '#111111',
         caramel: '#A67B5B',
+        'caramel-dark': '#7A5A40',
       },
       fontFamily: {
         display: ['"Playfair Display"', 'Georgia', 'serif'],
