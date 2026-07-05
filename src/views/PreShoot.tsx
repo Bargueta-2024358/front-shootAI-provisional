@@ -7,10 +7,12 @@ import { WaitingOverlay } from './Waiting'
 // Types
 // ---------------------------------------------------------------------------
 
-interface ImageFile {
+// Renamed from ImageFile to UploadedFile — now handles images AND documents
+interface UploadedFile {
   id: string
   file: File
-  previewUrl: string
+  // previewUrl is set only for image files; null for documents
+  previewUrl: string | null
 }
 
 interface AnalysisResult {
@@ -18,6 +20,25 @@ interface AnalysisResult {
   matchPercentage: number
   colorPalette: { hex: string; name: string }[]
 }
+
+// ---------------------------------------------------------------------------
+// File type helpers
+// ---------------------------------------------------------------------------
+
+const ACCEPTED_DOC_TYPES = new Set([
+  'text/plain',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/pdf',
+])
+
+const isImageFile = (f: File) => f.type.startsWith('image/')
+const isDocFile   = (f: File) => ACCEPTED_DOC_TYPES.has(f.type)
+const isAccepted  = (f: File) => isImageFile(f) || isDocFile(f)
+
+// TODO: cuando el backend esté disponible, los archivos de documento
+// (PDF/DOC/TXT) probablemente se usarán para extraer texto/contexto
+// adicional para el análisis de estilismo, no solo las imágenes.
 
 // ---------------------------------------------------------------------------
 // Mock data
@@ -83,7 +104,27 @@ const MOCK_PALETTES: { colors: { hex: string; name: string }[]; matchPercentage:
 ]
 
 // ---------------------------------------------------------------------------
-// AnalysisPanel
+// Document icon (inline SVG — no extra dep needed)
+// ---------------------------------------------------------------------------
+
+function DocIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="28" height="34" viewBox="0 0 28 34"
+      fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden
+    >
+      <path d="M4 2h14l6 6v24H4V2z" />
+      <path d="M18 2v6h6" strokeLinejoin="round" />
+      <line x1="8" y1="14" x2="20" y2="14" />
+      <line x1="8" y1="19" x2="20" y2="19" />
+      <line x1="8" y1="24" x2="15" y2="24" />
+    </svg>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// AnalysisPanel  (Part D — scrollable cards + caramel scrollbar)
 // ---------------------------------------------------------------------------
 
 interface AnalysisPanelProps {
@@ -112,7 +153,7 @@ function AnalysisPanel({ result, loading }: AnalysisPanelProps) {
           {loading && (
             <div className="flex items-center gap-3">
               <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-silver border-t-caramel" />
-              <p className="font-body text-sm text-charcoal">Analizando imágenes…</p>
+              <p className="font-body text-sm text-charcoal">Analizando archivos…</p>
             </div>
           )}
 
@@ -123,7 +164,7 @@ function AnalysisPanel({ result, loading }: AnalysisPanelProps) {
               transition={{ duration: 0.4, delay: 0.1 }}
               className="flex flex-col gap-6"
             >
-              {/* Match percentage — dark card */}
+              {/* 1 — Compatibilidad de silueta (always visible, not in scroll) */}
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -151,38 +192,40 @@ function AnalysisPanel({ result, loading }: AnalysisPanelProps) {
                 </div>
               </motion.div>
 
-              {/* Recommendations — dark cards */}
+              {/* 2 — Recomendaciones (scrollable container) */}
               <div>
                 <p className="font-display text-xs tracking-[0.3em] uppercase text-mid-gray mb-3">
                   Recomendación de prendas
                 </p>
-                <div className="flex flex-col gap-3">
-                  {result.recommendations.map((rec, i) => (
-                    <motion.div
-                      key={rec.label}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.25 + i * 0.1 }}
-                      className="rounded-sm p-5"
-                      style={{ backgroundColor: '#7A5A40' }}
-                    >
-                      <div className="flex gap-3 items-start">
-                        <span className="font-display text-xs text-[#EEDFC9] select-none mt-0.5 shrink-0">
-                          {String(i + 1).padStart(2, '0')}
-                        </span>
-                        <div>
-                          <p className="font-display text-sm font-medium text-white">{rec.label}</p>
-                          <p className="mt-1 font-body text-sm leading-relaxed text-white/75">
-                            {rec.description}
-                          </p>
+                <div className="max-h-[420px] overflow-y-auto scroll-caramel pr-1">
+                  <div className="flex flex-col gap-3">
+                    {result.recommendations.map((rec, i) => (
+                      <motion.div
+                        key={rec.label}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, delay: 0.25 + i * 0.1 }}
+                        className="rounded-sm p-5"
+                        style={{ backgroundColor: '#7A5A40' }}
+                      >
+                        <div className="flex gap-3 items-start">
+                          <span className="font-display text-xs text-[#EEDFC9] select-none mt-0.5 shrink-0">
+                            {String(i + 1).padStart(2, '0')}
+                          </span>
+                          <div>
+                            <p className="font-display text-sm font-medium text-white">{rec.label}</p>
+                            <p className="mt-1 font-body text-sm leading-relaxed text-white/75">
+                              {rec.description}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              {/* Color palette */}
+              {/* 3 — Paleta de color (always visible, after scroll box) */}
               <div>
                 <p className="font-display text-xs tracking-[0.3em] uppercase text-mid-gray mb-4">
                   Paleta de color sugerida
@@ -217,27 +260,27 @@ function AnalysisPanel({ result, loading }: AnalysisPanelProps) {
 }
 
 // ---------------------------------------------------------------------------
-// ImageDropzone
+// FileDropzone  (Part A — accepts images + documents)
 // ---------------------------------------------------------------------------
 
-interface ImageDropzoneProps {
-  images: ImageFile[]
+interface FileDropzoneProps {
+  files: UploadedFile[]
   onAdd: (files: File[]) => void
   onRemove: (id: string) => void
 }
 
-function ImageDropzone({ images, onAdd, onRemove }: ImageDropzoneProps) {
+function FileDropzone({ files, onAdd, onRemove }: FileDropzoneProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
 
-  const filterImages = (files: FileList | File[]) =>
-    Array.from(files).filter((f) => f.type.startsWith('image/'))
+  const filterAccepted = (list: FileList | File[]) =>
+    Array.from(list).filter(isAccepted)
 
   const handleDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault()
       setDragging(false)
-      const valid = filterImages(e.dataTransfer.files)
+      const valid = filterAccepted(e.dataTransfer.files)
       if (valid.length) onAdd(valid)
     },
     [onAdd],
@@ -245,18 +288,19 @@ function ImageDropzone({ images, onAdd, onRemove }: ImageDropzoneProps) {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return
-    const valid = filterImages(e.target.files)
+    const valid = filterAccepted(e.target.files)
     if (valid.length) onAdd(valid)
     e.target.value = ''
   }
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Drop zone */}
       <div
         role="button"
         tabIndex={0}
-        aria-label="Zona de carga de imágenes. Arrastra o haz clic para seleccionar."
-        className={`relative flex min-h-[220px] cursor-pointer flex-col items-center justify-center gap-4 border border-dashed transition-colors duration-200 ${
+        aria-label="Zona de carga. Arrastra o haz clic para seleccionar imágenes o documentos."
+        className={`relative flex min-h-[200px] cursor-pointer flex-col items-center justify-center gap-4 border border-dashed transition-colors duration-200 ${
           dragging
             ? 'border-caramel bg-caramel/5'
             : 'border-silver bg-smoke/40 hover:border-charcoal hover:bg-smoke/70'
@@ -270,7 +314,7 @@ function ImageDropzone({ images, onAdd, onRemove }: ImageDropzoneProps) {
         <input
           ref={inputRef}
           type="file"
-          accept="image/*"
+          accept="image/*,.txt,.doc,.docx,.pdf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
           multiple
           className="sr-only"
           onChange={handleChange}
@@ -287,16 +331,17 @@ function ImageDropzone({ images, onAdd, onRemove }: ImageDropzoneProps) {
         </svg>
         <div className="text-center px-6">
           <p className="font-display text-sm tracking-wide text-black">
-            {dragging ? 'Suelta las imágenes aquí' : 'Arrastra imágenes o haz clic para seleccionar'}
+            {dragging ? 'Suelta los archivos aquí' : 'Arrastra archivos o haz clic para seleccionar'}
           </p>
           <p className="mt-1 font-body text-xs text-charcoal">
-            PNG, JPG, WEBP — múltiples archivos permitidos
+            Imágenes (PNG, JPG, WEBP), documentos (PDF, DOC, DOCX, TXT) — múltiples archivos permitidos
           </p>
         </div>
       </div>
 
+      {/* Preview grid */}
       <AnimatePresence initial={false}>
-        {images.length > 0 && (
+        {files.length > 0 && (
           <motion.div
             key="grid"
             initial={{ opacity: 0, height: 0 }}
@@ -305,10 +350,10 @@ function ImageDropzone({ images, onAdd, onRemove }: ImageDropzoneProps) {
             transition={{ duration: 0.3 }}
             className="overflow-hidden"
           >
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4">
-              {images.map((img) => (
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8">
+              {files.map((item) => (
                 <motion.div
-                  key={img.id}
+                  key={item.id}
                   layout
                   initial={{ opacity: 0, scale: 0.85 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -316,18 +361,29 @@ function ImageDropzone({ images, onAdd, onRemove }: ImageDropzoneProps) {
                   transition={{ duration: 0.25 }}
                   className="group relative aspect-square overflow-hidden bg-smoke"
                 >
-                  <img
-                    src={img.previewUrl}
-                    alt={img.file.name}
-                    className="h-full w-full object-cover"
-                    loading="lazy"
-                  />
+                  {item.previewUrl ? (
+                    /* Image thumbnail */
+                    <img
+                      src={item.previewUrl}
+                      alt={item.file.name}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    /* Document icon + name */
+                    <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 px-2 bg-smoke/80">
+                      <DocIcon className="text-mid-gray" />
+                      <p className="w-full truncate text-center font-body text-[9px] text-charcoal leading-tight">
+                        {item.file.name}
+                      </p>
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/30" />
                   <button
                     type="button"
-                    aria-label={`Eliminar ${img.file.name}`}
+                    aria-label={`Eliminar ${item.file.name}`}
                     className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-caramel focus-visible:opacity-100"
-                    onClick={() => onRemove(img.id)}
+                    onClick={(e) => { e.stopPropagation(); onRemove(item.id) }}
                   >
                     <span className="text-xs leading-none">×</span>
                   </button>
@@ -346,35 +402,38 @@ function ImageDropzone({ images, onAdd, onRemove }: ImageDropzoneProps) {
 // ---------------------------------------------------------------------------
 
 export default function PreShoot() {
-  const [images, setImages] = useState<ImageFile[]>([])
+  const [files, setFiles] = useState<UploadedFile[]>([])
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
   const [analyzing, setAnalyzing] = useState(false)
-  // BOTÓN PROVISIONAL - eliminar cuando el flujo real de espera esté
-  // conectado al backend y se dispare automáticamente al procesar la imagen.
   const [showWaiting, setShowWaiting] = useState(false)
+
+  // TODO: este texto se debe enviar junto con las imágenes/documentos
+  // al backend como contexto adicional para el análisis de estilismo.
+  const [notes, setNotes] = useState('')
 
   useEffect(() => {
     return () => {
-      images.forEach((img) => URL.revokeObjectURL(img.previewUrl))
+      // Revoke object URLs only for image files on unmount
+      files.forEach((f) => { if (f.previewUrl) URL.revokeObjectURL(f.previewUrl) })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const handleAdd = useCallback((files: File[]) => {
-    const newImages: ImageFile[] = files.map((file) => ({
+  const handleAdd = useCallback((incoming: File[]) => {
+    const newFiles: UploadedFile[] = incoming.map((file) => ({
       id: `${file.name}-${Date.now()}-${Math.random()}`,
       file,
-      previewUrl: URL.createObjectURL(file),
+      previewUrl: isImageFile(file) ? URL.createObjectURL(file) : null,
     }))
-    setImages((prev) => [...prev, ...newImages])
+    setFiles((prev) => [...prev, ...newFiles])
     triggerAnalysis()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRemove = useCallback((id: string) => {
-    setImages((prev) => {
-      const removed = prev.find((img) => img.id === id)
-      if (removed) URL.revokeObjectURL(removed.previewUrl)
-      const next = prev.filter((img) => img.id !== id)
+    setFiles((prev) => {
+      const removed = prev.find((f) => f.id === id)
+      if (removed?.previewUrl) URL.revokeObjectURL(removed.previewUrl)
+      const next = prev.filter((f) => f.id !== id)
       if (next.length === 0) setAnalysisResult(null)
       return next
     })
@@ -387,7 +446,6 @@ export default function PreShoot() {
     setAnalyzing(true)
     setAnalysisResult(null)
     setTimeout(() => {
-      // TODO: paleta aleatoria → reemplazar por análisis real de color dominante
       const picked = MOCK_PALETTES[Math.floor(Math.random() * MOCK_PALETTES.length)]
       setAnalyzing(false)
       setAnalysisResult({
@@ -404,11 +462,13 @@ export default function PreShoot() {
     analysisTimer.current = setTimeout(() => analyzeImages(), 300)
   }
 
+  const fileCount = files.length
+
   return (
     <>
       <Navbar />
 
-      {/* BOTÓN PROVISIONAL - eliminar cuando el flujo real de espera esté
+      {/* BOTÓN PROVISIONAL — eliminar cuando el flujo real de espera esté
           conectado al backend y se dispare automáticamente al procesar la imagen. */}
       <WaitingOverlay
         isOpen={showWaiting}
@@ -416,6 +476,7 @@ export default function PreShoot() {
         hideCancelButton={false}
       />
 
+      {/* Dark header */}
       <div className="bg-black pt-20">
         <div className="mx-auto max-w-[1400px] px-6 pb-14 pt-16 md:px-10 md:pt-20">
           <p className="font-display text-xs tracking-[0.4em] text-mid-gray uppercase">
@@ -425,45 +486,73 @@ export default function PreShoot() {
             Pre-Shoot
           </h1>
           <p className="mt-5 max-w-xl font-body text-base leading-relaxed text-charcoal">
-            Sube imágenes de referencia para que el sistema analice siluetas, recomiende prendas
-            y genere una paleta editorial personalizada antes de la sesión.
+            Sube imágenes y documentos de referencia para que el sistema analice siluetas,
+            recomiende prendas y genere una paleta editorial personalizada antes de la sesión.
           </p>
         </div>
       </div>
 
+      {/* White content area — full-width vertical stack */}
       <main className="bg-white">
         <div className="mx-auto max-w-[1400px] px-6 py-16 md:px-10 md:py-20">
-          <div className="flex flex-col gap-12 lg:flex-row lg:gap-16 lg:items-start">
+          <div className="flex flex-col gap-12">
 
-            {/* Left — Dropzone */}
-            <div className="w-full lg:w-[55%] xl:w-[60%]">
-              <div className="mb-6">
-                <p className="font-display text-xs tracking-[0.35em] uppercase text-mid-gray">
-                  Imágenes de referencia
-                </p>
-                <p className="mt-2 font-body text-sm text-charcoal">
-                  {images.length === 0
-                    ? 'Aún no has subido imágenes.'
-                    : `${images.length} imagen${images.length > 1 ? 'es' : ''} cargada${images.length > 1 ? 's' : ''}.`}
-                </p>
+            {/* ── Part C — Textarea (above dropzone) ── */}
+            <div>
+              <p className="font-display text-xs tracking-[0.35em] uppercase text-mid-gray mb-3">
+                Notas de contexto
+              </p>
+              <div className="relative">
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={5}
+                  className={`w-full resize-none border border-mid-gray/30 bg-white px-5 py-4 font-body text-sm text-charcoal transition-colors duration-200 focus:border-caramel focus:outline-none ${
+                    notes === '' ? 'text-center' : 'text-left'
+                  }`}
+                  style={notes === '' ? { paddingTop: '2.75rem' } : {}}
+                />
+                {/* Styled placeholder shown only when empty */}
+                {notes === '' && (
+                  <span
+                    className="pointer-events-none absolute left-0 top-0 flex h-full w-full items-center justify-center font-body text-sm italic text-mid-gray/60"
+                    aria-hidden
+                  >
+                    Escribe…
+                  </span>
+                )}
               </div>
-
-              <ImageDropzone images={images} onAdd={handleAdd} onRemove={handleRemove} />
-
-              {/* BOTÓN PROVISIONAL - eliminar cuando el flujo real de espera esté
-                  conectado al backend y se dispare automáticamente al procesar la imagen. */}
-              <button
-                type="button"
-                className="mt-6 border border-silver px-4 py-2 font-display text-[10px] tracking-[0.2em] uppercase text-mid-gray transition-colors hover:border-caramel hover:text-caramel"
-                onClick={() => setShowWaiting(true)}
-              >
-                Ver pantalla de espera (demo)
-              </button>
             </div>
 
-            {/* Right — Analysis panel */}
-            <div className="w-full lg:w-[45%] xl:w-[40%] lg:sticky lg:top-28">
-              {images.length === 0 ? (
+            {/* ── Part A — File dropzone (full width) ── */}
+            <div>
+              <div className="mb-6 flex items-baseline justify-between">
+                <div>
+                  <p className="font-display text-xs tracking-[0.35em] uppercase text-mid-gray">
+                    Archivos de referencia
+                  </p>
+                  <p className="mt-2 font-body text-sm text-charcoal">
+                    {fileCount === 0
+                      ? 'Aún no has subido archivos.'
+                      : `${fileCount} archivo${fileCount > 1 ? 's' : ''} cargado${fileCount > 1 ? 's' : ''}.`}
+                  </p>
+                </div>
+                {/* BOTÓN PROVISIONAL */}
+                <button
+                  type="button"
+                  className="border border-silver px-4 py-2 font-display text-[10px] tracking-[0.2em] uppercase text-mid-gray transition-colors hover:border-caramel hover:text-caramel"
+                  onClick={() => setShowWaiting(true)}
+                >
+                  Ver pantalla de espera (demo)
+                </button>
+              </div>
+
+              <FileDropzone files={files} onAdd={handleAdd} onRemove={handleRemove} />
+            </div>
+
+            {/* ── Part D — Analysis panel (full width, below) ── */}
+            <div>
+              {fileCount === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-3 border border-dashed border-silver py-16 text-center">
                   <svg className="text-silver" width="32" height="32" viewBox="0 0 32 32"
                     fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
@@ -471,13 +560,14 @@ export default function PreShoot() {
                     <path d="M16 10v6M16 20v2" strokeLinecap="round" />
                   </svg>
                   <p className="font-display text-sm text-mid-gray">
-                    El análisis aparecerá aquí<br />una vez subas imágenes
+                    El análisis aparecerá aquí<br />una vez subas archivos
                   </p>
                 </div>
               ) : (
                 <AnalysisPanel result={analysisResult} loading={analyzing} />
               )}
             </div>
+
           </div>
         </div>
       </main>
