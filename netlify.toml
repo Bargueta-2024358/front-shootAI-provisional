@@ -17,6 +17,7 @@
   CLOUDINARY_API_KEY = "924946488326563"
   CLOUDINARY_API_SECRET = "4maMZaHyOn2WP34rJ7dqySld0ws"
   DEMO_EMPRESA_ID = "520d6f4f-7dec-4821-9b17-2f54e35772fd"
+  VITE_DEMO_EMPRESA_ID = "520d6f4f-7dec-4821-9b17-2f54e35772fd"
   CODEX_API_URL = "https://api.openai.com/v1/chat/completions"
   CODEX_MODEL = "gpt-4o-mini"
 

@@ -39,6 +39,9 @@ const ACCEPTED_DOC_TYPES = new Set([
 const isImageFile = (f: File) => f.type.startsWith('image/')
 const isDocFile   = (f: File) => ACCEPTED_DOC_TYPES.has(f.type)
 const isAccepted  = (f: File) => isImageFile(f) || isDocFile(f)
+const DEMO_EMPRESA_ID =
+  (import.meta.env.VITE_DEMO_EMPRESA_ID as string | undefined)?.trim() ||
+  '520d6f4f-7dec-4821-9b17-2f54e35772fd'
 
 // ---------------------------------------------------------------------------
 // Framer Motion variants — stagger reveal for analysis section
@@ -422,6 +425,7 @@ export default function PreShoot() {
 
     try {
       const formData = new FormData()
+      formData.append('empresaId', DEMO_EMPRESA_ID)
       if (notes.trim()) {
         formData.append('freeText', notes.trim())
       }
