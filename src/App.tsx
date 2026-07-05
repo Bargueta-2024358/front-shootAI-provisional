@@ -65,7 +65,7 @@ export default function App() {
             <Route
               path="/pre-shoot"
               element={
-                <Protected requireBodyPhoto>
+                <Protected>
                   <PreShoot />
                 </Protected>
               }
@@ -73,7 +73,7 @@ export default function App() {
             <Route
               path="/outfit-styling"
               element={
-                <Protected requireBodyPhoto>
+                <Protected>
                   <OutfitStyling />
                 </Protected>
               }

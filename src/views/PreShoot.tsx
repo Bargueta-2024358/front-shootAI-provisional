@@ -8,9 +8,11 @@ import { useAuth } from '../context/AuthContext'
 import { apiJson } from '../lib/api'
 import {
   loadPreShootState,
+  saveOutfitsCache,
   savePreShootState,
   type TargetGender,
 } from '../lib/sessionFlow'
+import type { Outfit, OutfitsByCategory } from '../types/auth'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -42,6 +44,85 @@ const isAccepted  = (f: File) => isImageFile(f) || isDocFile(f)
 const DEMO_EMPRESA_ID =
   (import.meta.env.VITE_DEMO_EMPRESA_ID as string | undefined)?.trim() ||
   '520d6f4f-7dec-4821-9b17-2f54e35772fd'
+
+const FALLBACK_GARMENTS = [
+  {
+    name: 'Blazer estructurado',
+    brand: 'ShootAI',
+    type: 'outerwear',
+    imageUrl: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=700&q=80',
+  },
+  {
+    name: 'Camisa limpia',
+    brand: 'ShootAI',
+    type: 'top',
+    imageUrl: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=700&q=80',
+  },
+  {
+    name: 'Pantalón recto',
+    brand: 'ShootAI',
+    type: 'bottom',
+    imageUrl: 'https://images.unsplash.com/photo-1506629905607-d9f297d61941?w=700&q=80',
+  },
+  {
+    name: 'Zapato neutro',
+    brand: 'ShootAI',
+    type: 'footwear',
+    imageUrl: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=700&q=80',
+  },
+  {
+    name: 'Accesorio editorial',
+    brand: 'ShootAI',
+    type: 'accessory',
+    imageUrl: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=700&q=80',
+  },
+]
+
+function inferFallbackCategories(notes: string, files: UploadedFile[]): string[] {
+  const text = notes.toLowerCase()
+  const categories = new Set<string>()
+
+  if (/street|urbano|urban|oversize|baggy/.test(text)) categories.add('streetwear')
+  if (/formal|elegante|boda|gala|traje/.test(text)) categories.add('formal')
+  if (/oficina|office|smart|business/.test(text)) categories.add('smart-casual')
+  if (/minimal|limpio|clean|neutro/.test(text)) categories.add('minimalist')
+  if (/sport|deport|gym|athletic/.test(text)) categories.add('sportswear')
+  if (/lux|lujo|premium/.test(text)) categories.add('luxury')
+  if (/vintage|retro/.test(text)) categories.add('vintage')
+  if (/casual|diario|relajado|weekend/.test(text)) categories.add('casual')
+
+  if (categories.size === 0) {
+    categories.add(files.some((item) => isImageFile(item.file)) ? 'casual' : 'minimalist')
+  }
+
+  return [...categories].slice(0, 4)
+}
+
+function buildFallbackOutfits(tags: string[]): OutfitsByCategory[] {
+  const categories = tags.length > 0 ? tags : ['casual']
+  const minLooks = categories.length === 1 ? 3 : 2
+
+  return categories.map((category) => ({
+    category,
+    matchPercentage: 82,
+    outfits: Array.from({ length: minLooks }, (_, outfitIndex): Outfit => ({
+      id: `${category}-local-${outfitIndex + 1}`,
+      score: 8.2 - outfitIndex * 0.2,
+      garments: FALLBACK_GARMENTS.map((garment, garmentIndex) => ({
+        slot: garment.type,
+        name:
+          outfitIndex === 0
+            ? garment.name
+            : `${garment.name} ${outfitIndex + 1}`,
+        brand: garment.brand,
+        type: garment.type,
+        imageUrl: garment.imageUrl,
+        productUrl: '#',
+        score: 8 - garmentIndex * 0.1,
+      })),
+    })),
+  }))
+}
 
 // ---------------------------------------------------------------------------
 // Framer Motion variants — stagger reveal for analysis section
@@ -471,7 +552,29 @@ export default function PreShoot() {
         notes: notes.trim(),
       })
     } catch (err) {
-      setAnalysisError(err instanceof Error ? err.message : 'Error inesperado durante el análisis')
+      const fallbackProjectId = `local-${Date.now()}`
+      const tags = inferFallbackCategories(notes, files)
+
+      setProjectId(fallbackProjectId)
+      setCategoryResult({ tags })
+      savePreShootState({
+        projectId: fallbackProjectId,
+        gender: profileGender,
+        tags,
+        notes: notes.trim(),
+      })
+      saveOutfitsCache({
+        projectId: fallbackProjectId,
+        gender: profileGender,
+        outfitsByCategory: buildFallbackOutfits(tags),
+        matchPercentage: 82,
+        savedAt: new Date().toISOString(),
+      })
+      setAnalysisError(
+        `Análisis local activado: ${
+          err instanceof Error ? err.message : 'el backend no respondió'
+        }`
+      )
     } finally {
       setAnalyzing(false)
     }

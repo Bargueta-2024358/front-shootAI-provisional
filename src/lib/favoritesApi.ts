@@ -61,7 +61,7 @@ function mergeFavorites(...groups: FavoriteOutfit[][]): FavoriteOutfit[] {
       favorite.projectId,
       favorite.title,
       favorite.category,
-      favorite.garments?.map((g) => g.garmentId || g.name).join('|'),
+      favorite.garments?.map((g) => `${g.slot}:${g.name}`).join('|'),
     ].join(':')
     if (seen.has(key)) continue
     seen.add(key)
