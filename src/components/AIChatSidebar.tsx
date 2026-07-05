@@ -1,40 +1,52 @@
-import { motion } from 'framer-motion'
+import { useEffect, useRef } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import type { CoachMessage, CoachStatus } from '../lib/usePoseCoach'
 
-// TODO: estos mensajes son de ejemplo (mock). Cuando el backend de
-// IA esté conectado, este componente debe recibir los mensajes reales
-// en tiempo real (ej. vía WebSocket o polling) analizando el feed de
-// la cámara, y renderizarlos aquí dinámicamente en vez del array
-// estático actual.
+interface AIChatSidebarProps {
+  messages: CoachMessage[]
+  status: CoachStatus
+  cameraActive: boolean
+}
 
-const MOCK_MESSAGES = [
-  {
-    id: 1,
-    text: 'Estoy detectando buena iluminación natural en el encuadre.',
-    time: 'hace unos segundos',
-  },
-  {
-    id: 2,
-    text: 'La pose actual favorece la silueta de la prenda superior.',
-    time: 'hace 1 min',
-  },
-  {
-    id: 3,
-    text: 'Sugerencia: gira ligeramente el hombro derecho hacia la cámara para ganar profundidad.',
-    time: 'hace 1 min',
-  },
-  {
-    id: 4,
-    text: 'El contraste de color entre prenda y fondo se ve equilibrado.',
-    time: 'hace 2 min',
-  },
-  {
-    id: 5,
-    text: 'Prueba inclinar la cabeza levemente hacia la izquierda para dinamizar el plano.',
-    time: 'hace 3 min',
-  },
-]
+function relativeTime(ts: number): string {
+  const s = Math.max(0, Math.round((Date.now() - ts) / 1000))
+  if (s < 5) return 'ahora mismo'
+  if (s < 60) return `hace ${s} s`
+  const m = Math.floor(s / 60)
+  return `hace ${m} min`
+}
 
-export default function AIChatSidebar() {
+const STATUS_HINT: Record<CoachStatus, string> = {
+  loading: 'Cargando el modelo de IA…',
+  ready: 'Activa la cámara para comenzar el análisis.',
+  analyzing: 'Analizando tu pose en tiempo real…',
+  'no-pose': 'No detecto tu cuerpo. Encuádrate de pecho a cadera.',
+  error: 'No se pudo cargar el modelo (revisa tu conexión).',
+}
+
+export default function AIChatSidebar({
+  messages,
+  status,
+  cameraActive,
+}: AIChatSidebarProps) {
+  const bottomRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+  }, [messages.length])
+
+  const showTyping = cameraActive && (status === 'analyzing' || status === 'no-pose')
+  const isEmpty = messages.length === 0
+
+  const dotColor =
+    status === 'analyzing'
+      ? 'bg-caramel'
+      : status === 'error'
+        ? 'bg-[#9C4B4B]'
+        : status === 'loading'
+          ? 'bg-mid-gray'
+          : 'bg-white/40'
+
   return (
     <div className="flex h-full flex-col bg-black">
       {/* Header */}
@@ -42,59 +54,88 @@ export default function AIChatSidebar() {
         <p className="font-display text-[10px] tracking-[0.35em] uppercase text-mid-gray">
           Asistente
         </p>
-        <p className="mt-1 font-display text-base tracking-wide text-white">
-          Shoot AI
-        </p>
+        <div className="mt-1 flex items-center gap-2">
+          <span className={`h-2 w-2 rounded-full ${dotColor}`} aria-hidden />
+          <p className="font-display text-base tracking-wide text-white">Shoot AI</p>
+        </div>
       </div>
 
       {/* Messages — scrollable */}
       <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-5 scrollbar-thin">
-        {MOCK_MESSAGES.map((msg, i) => (
-          <motion.div
-            key={msg.id}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: 'easeOut', delay: 0.3 + i * 0.15 }}
-            className="flex flex-col gap-1"
-          >
-            <div className="rounded-sm bg-white/8 px-4 py-3"
-              style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
-              <p className="font-body text-sm leading-relaxed text-white/90">
-                {msg.text}
-              </p>
-            </div>
-            <p className="px-1 font-body text-[10px] text-white/30">
-              {msg.time}
+        {isEmpty && (
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 text-center">
+            {status === 'loading' && (
+              <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-white/15 border-t-caramel" />
+            )}
+            <p className="font-body text-xs leading-relaxed text-white/40">
+              {STATUS_HINT[status]}
             </p>
-          </motion.div>
-        ))}
+          </div>
+        )}
 
-        {/* Typing indicator */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 + MOCK_MESSAGES.length * 0.15 + 0.2 }}
-          className="flex items-center gap-1.5 px-4 py-3"
-          aria-label="Analizando…"
-        >
-          {[0, 1, 2].map((i) => (
-            <motion.span
-              key={i}
-              className="block h-1.5 w-1.5 rounded-full bg-caramel"
-              animate={{ opacity: [0.3, 1, 0.3] }}
-              transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
-            />
+        <AnimatePresence initial={false}>
+          {messages.map((msg) => (
+            <motion.div
+              key={msg.id}
+              layout
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.35, ease: 'easeOut' }}
+              className="flex flex-col gap-1"
+            >
+              <div
+                className={`rounded-sm px-4 py-3 ${
+                  msg.kind === 'diagnosis'
+                    ? 'border-l-2 border-caramel bg-caramel/10'
+                    : 'bg-white/[0.06]'
+                }`}
+              >
+                {msg.kind === 'diagnosis' && (
+                  <p className="mb-1 font-display text-[9px] tracking-[0.3em] uppercase text-caramel">
+                    Diagnóstico
+                  </p>
+                )}
+                <p className="font-body text-sm leading-relaxed text-white/90">
+                  {msg.text}
+                </p>
+              </div>
+              <p className="px-1 font-body text-[10px] text-white/30">
+                {relativeTime(msg.ts)}
+              </p>
+            </motion.div>
           ))}
-          <span className="ml-1 font-body text-[10px] text-white/40">
-            Analizando encuadre…
-          </span>
-        </motion.div>
+        </AnimatePresence>
+
+        {/* Typing / analyzing indicator */}
+        {showTyping && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center gap-1.5 px-4 py-3"
+            aria-label="Analizando…"
+          >
+            {[0, 1, 2].map((i) => (
+              <motion.span
+                key={i}
+                className="block h-1.5 w-1.5 rounded-full bg-caramel"
+                animate={{ opacity: [0.3, 1, 0.3] }}
+                transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+              />
+            ))}
+            <span className="ml-1 font-body text-[10px] text-white/40">
+              {status === 'no-pose' ? 'Buscando tu silueta…' : 'Analizando encuadre…'}
+            </span>
+          </motion.div>
+        )}
+
+        <div ref={bottomRef} />
       </div>
 
       {/* Footer hint */}
       <div className="shrink-0 border-t border-white/10 px-5 py-3">
         <p className="font-body text-[10px] leading-relaxed text-white/25">
-          Los mensajes se actualizarán automáticamente al conectar el análisis de IA en tiempo real.
+          Sugerencias generadas en tiempo real analizando tu pose con IA.
         </p>
       </div>
     </div>

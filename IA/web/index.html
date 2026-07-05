@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Pose Coach — coaching de poses en vivo con webcam" />
+  <title>Pose Coach</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header>
+    <h1>Pose Coach</h1>
+    <p>Enfoque en torso — webcam + MediaPipe + clasificador</p>
+  </header>
+
+  <main>
+    <section class="stage">
+      <video id="video" playsinline autoplay muted></video>
+      <canvas id="overlay"></canvas>
+      <div id="frame-guide" class="frame-guide frame-guide--warn" hidden>
+        <span class="frame-guide__label">Pecho → cadera</span>
+      </div>
+      <div id="flash" class="flash" aria-hidden="true"></div>
+      <div id="score-ring" class="score score--idle">
+        <span id="score-label">—</span>
+        <small id="score-pct">0%</small>
+      </div>
+    </section>
+
+    <aside class="panel">
+      <div class="insight-box">
+        <div id="insight" class="insight">Activa la cámara para empezar.</div>
+        <p id="insight-detail" class="insight-detail"></p>
+      </div>
+
+      <ul id="tips-list" class="tips-list" aria-label="Consejos de pose"></ul>
+
+      <div id="capture-progress" class="capture-progress" hidden aria-valuemin="0" aria-valuemax="100">
+        <label>Naturalidad al 80% → foto automática</label>
+        <div class="capture-progress__track">
+          <div id="capture-bar" class="capture-progress__bar"></div>
+        </div>
+      </div>
+
+      <ul id="probs" class="probs"></ul>
+      <p id="voice-status" class="voice-status" aria-live="polite"></p>
+      <div class="camera-controls">
+        <button id="start-btn" type="button">Activar cámara</button>
+        <button id="stop-btn" type="button" disabled>Desactivar cámara</button>
+        <button id="voice-btn" type="button" class="voice-btn voice-btn--off">Voz OFF</button>
+      </div>
+    </aside>
+  </main>
+
+  <section class="gallery-wrap">
+    <h2>Fotos capturadas</h2>
+    <div id="gallery" class="gallery"></div>
+  </section>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

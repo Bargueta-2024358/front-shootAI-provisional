@@ -77,7 +77,7 @@ export declare function initPose(
 ): Promise<unknown>
 
 export declare function detectPose(
-  imageEl: HTMLImageElement | HTMLCanvasElement,
+  imageEl: HTMLImageElement | HTMLCanvasElement | HTMLVideoElement,
 ): Promise<{ landmarks: Landmark[] | null; raw?: unknown }>
 
 export declare function computeInsights(

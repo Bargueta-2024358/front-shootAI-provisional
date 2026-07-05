@@ -4,6 +4,8 @@ import { motion } from 'framer-motion'
 import Navbar from '../components/Navbar'
 import AIChatSidebar from '../components/AIChatSidebar'
 import ModuleNavBar from '../components/ModuleNavBar'
+import { usePoseCoach } from '../lib/usePoseCoach'
+import type { CoachStatus } from '../lib/usePoseCoach'
 
 // Navbar height in px — keep in sync with h-20 in Navbar.tsx
 const NAVBAR_H = 80
@@ -22,8 +24,14 @@ interface FlowState {
 
 type CameraStatus = 'idle' | 'loading' | 'active' | 'denied' | 'unavailable'
 
-function CameraFeed() {
-  const videoRef = useRef<HTMLVideoElement>(null)
+interface CameraFeedProps {
+  videoRef: React.RefObject<HTMLVideoElement>
+  overlayRef: React.RefObject<HTMLCanvasElement>
+  onActiveChange: (active: boolean) => void
+  coachStatus: CoachStatus
+}
+
+function CameraFeed({ videoRef, overlayRef, onActiveChange, coachStatus }: CameraFeedProps) {
   const [status, setStatus] = useState<CameraStatus>('loading')
 
   useEffect(() => {
@@ -35,11 +43,15 @@ function CameraFeed() {
         return
       }
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
+        })
         if (videoRef.current) {
           videoRef.current.srcObject = stream
         }
         setStatus('active')
+        onActiveChange(true)
       } catch (err) {
         const error = err as DOMException
         if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
@@ -47,6 +59,7 @@ function CameraFeed() {
         } else {
           setStatus('unavailable')
         }
+        onActiveChange(false)
       }
     }
 
@@ -55,8 +68,9 @@ function CameraFeed() {
     // Cleanup: stop all tracks so the camera light turns off when leaving the view
     return () => {
       stream?.getTracks().forEach((track) => track.stop())
+      onActiveChange(false)
     }
-  }, [])
+  }, [videoRef, onActiveChange])
 
   const isError = status === 'denied' || status === 'unavailable'
 
@@ -71,6 +85,13 @@ function CameraFeed() {
           status === 'active' ? 'opacity-100' : 'opacity-0'
         }`}
         aria-label="Feed de cámara en tiempo real"
+      />
+
+      {/* Skeleton overlay — drawn by usePoseCoach on top of the video */}
+      <canvas
+        ref={overlayRef}
+        className="pointer-events-none absolute inset-0 h-full w-full"
+        aria-hidden
       />
 
       {/* Loading */}
@@ -113,6 +134,33 @@ function CameraFeed() {
         </div>
       )}
 
+      {/* AI status pill — top-right */}
+      {status === 'active' && (
+        <div className="absolute right-4 top-4 z-10 flex items-center gap-2 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-sm">
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${
+              coachStatus === 'analyzing'
+                ? 'animate-pulse bg-caramel'
+                : coachStatus === 'error'
+                  ? 'bg-[#9C4B4B]'
+                  : 'bg-white/40'
+            }`}
+            aria-hidden
+          />
+          <span className="font-display text-[9px] tracking-[0.25em] uppercase text-white/70">
+            {coachStatus === 'loading'
+              ? 'Cargando IA'
+              : coachStatus === 'analyzing'
+                ? 'IA analizando'
+                : coachStatus === 'no-pose'
+                  ? 'Sin pose'
+                  : coachStatus === 'error'
+                    ? 'IA no disponible'
+                    : 'IA lista'}
+          </span>
+        </div>
+      )}
+
       {/* Title overlay — bottom-left with gradient */}
       <div
         className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/60 to-transparent px-6 pb-16 pt-24 md:px-8 md:pb-20"
@@ -139,6 +187,16 @@ function CameraFeed() {
 export default function LiveShoot() {
   const location = useLocation()
   const flowState = (location.state as FlowState | null) ?? null
+
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const overlayRef = useRef<HTMLCanvasElement>(null)
+  const [cameraActive, setCameraActive] = useState(false)
+
+  const { status: coachStatus, messages } = usePoseCoach({
+    videoRef,
+    overlayRef,
+    active: cameraActive,
+  })
 
   useEffect(() => {
     if (flowState?.projectId) {
@@ -170,7 +228,12 @@ export default function LiveShoot() {
           transition={{ duration: 0.5 }}
           className="relative h-[60vh] w-full shrink-0 md:h-full md:flex-1"
         >
-          <CameraFeed />
+          <CameraFeed
+            videoRef={videoRef}
+            overlayRef={overlayRef}
+            onActiveChange={setCameraActive}
+            coachStatus={coachStatus}
+          />
         </motion.div>
 
         {/* AI Chat Sidebar — 25% desktop, auto-height mobile */}
@@ -181,7 +244,11 @@ export default function LiveShoot() {
           className="w-full border-t border-white/10 md:h-full md:w-[320px] md:shrink-0 md:border-l md:border-t-0 lg:w-[360px]"
           style={{ maxHeight: `calc(100vh - ${NAVBAR_H}px)` }}
         >
-          <AIChatSidebar />
+          <AIChatSidebar
+            messages={messages}
+            status={coachStatus}
+            cameraActive={cameraActive}
+          />
         </motion.div>
       </main>
     </>

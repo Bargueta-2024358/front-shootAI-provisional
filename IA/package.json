@@ -1,0 +1,8 @@
+{
+  "name": "pose-coach",
+  "private": true,
+  "scripts": {
+    "dev": ".venv\\Scripts\\python.exe scripts/serve_prototype.py",
+    "dev:netlify": "netlify dev"
+  }
+}

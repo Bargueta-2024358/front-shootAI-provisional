@@ -1,0 +1,383 @@
+{
+  "version": 1,
+  "maxVisible": 3,
+  "tips": [
+    {
+      "id": "frame_too_close",
+      "priority": 10,
+      "when": { "tooClose": { "eq": true } },
+      "main": "Estás muy cerca de la cámara.",
+      "detail": "Da un paso atrás hasta que se vea tu torso completo, desde hombros hasta caderas."
+    },
+    {
+      "id": "frame_too_close_casual",
+      "priority": 10,
+      "when": { "tooClose": { "eq": true }, "predictedClass": { "eq": "casual" } },
+      "main": "Acércate un poco menos.",
+      "detail": "En una pose casual necesitas espacio alrededor; retrocede hasta encuadrar bien el cuerpo."
+    },
+    {
+      "id": "frame_too_far",
+      "priority": 10,
+      "when": { "tooFar": { "eq": true } },
+      "main": "Estás demasiado lejos.",
+      "detail": "Acércate un poco para que hombros y torso llenen mejor el encuadre."
+    },
+    {
+      "id": "frame_too_far_corporativo",
+      "priority": 10,
+      "when": { "tooFar": { "eq": true }, "predictedClass": { "eq": "corporativo" } },
+      "main": "Acércate un poco más.",
+      "detail": "En una foto corporativa tu presencia debe sentirse cercana; reduce la distancia con la cámara."
+    },
+    {
+      "id": "frame_good",
+      "priority": 5,
+      "when": { "bodyFrameOk": { "eq": true } },
+      "main": "El encuadre está bien.",
+      "detail": "Tu cuerpo queda bien dentro del marco; ahora afina hombros, brazos y cabeza."
+    },
+    {
+      "id": "frame_good_casual",
+      "priority": 5,
+      "when": { "bodyFrameOk": { "eq": true }, "predictedClass": { "eq": "casual" } },
+      "main": "Buen encuadre para una pose relajada.",
+      "detail": "Tienes espacio suficiente; ahora deja que el gesto se vea natural."
+    },
+    {
+      "id": "frame_good_corporativo",
+      "priority": 5,
+      "when": { "bodyFrameOk": { "eq": true }, "predictedClass": { "eq": "corporativo" } },
+      "main": "Encuadre profesional.",
+      "detail": "La distancia es adecuada; mantén la postura firme y la mirada segura."
+    },
+    {
+      "id": "shoulders_too_flat",
+      "priority": 8,
+      "when": { "absSlope": { "lt": 0.05 }, "bodyFrameOk": { "eq": true } },
+      "main": "Los hombros están muy nivelados.",
+      "detail": "Baja ligeramente el hombro {lowerShoulder} o sube el {higherShoulder} para dar un poco de dinamismo."
+    },
+    {
+      "id": "shoulders_too_tilted",
+      "priority": 8,
+      "when": { "absSlope": { "gt": 0.28 }, "bodyFrameOk": { "eq": true } },
+      "main": "Los hombros están muy inclinados.",
+      "detail": "Nivela un poco la línea de los hombros; el hombro {lowerShoulder} está demasiado bajo."
+    },
+    {
+      "id": "shoulders_dynamic",
+      "priority": 6,
+      "when": { "shouldersDynamic": { "eq": true }, "bodyFrameOk": { "eq": true } },
+      "main": "Buena línea en los hombros.",
+      "detail": "La inclinación sutil entre hombro {higherShoulder} y {lowerShoulder} se ve natural y favorecedora."
+    },
+    {
+      "id": "shoulders_level_rigido",
+      "priority": 8,
+      "when": { "absSlope": { "lt": 0.05 }, "predictedClass": { "eq": "rigido" }, "bodyFrameOk": { "eq": true } },
+      "main": "En pose rígida, los hombros pueden inclinarse un poco.",
+      "detail": "Un leve desnivel —bajando el hombro {lowerShoulder}— evita que la foto se vea demasiado estática."
+    },
+    {
+      "id": "shoulders_tilt_casual",
+      "priority": 7,
+      "when": { "absSlope": { "gt": 0.22 }, "predictedClass": { "eq": "casual" }, "bodyFrameOk": { "eq": true } },
+      "main": "Los hombros están muy inclinados para un look casual.",
+      "detail": "Relaja la línea del hombro {lowerShoulder}; en casual basta con un gesto suave, no exagerado."
+    },
+    {
+      "id": "shoulders_corporativo_flat",
+      "priority": 8,
+      "when": { "absSlope": { "lt": 0.06 }, "predictedClass": { "eq": "corporativo" }, "bodyFrameOk": { "eq": true } },
+      "main": "Hombros muy planos para un retrato corporativo.",
+      "detail": "Un mínimo desnivel —el hombro {lowerShoulder} un poco más bajo— aporta presencia sin perder formalidad."
+    },
+    {
+      "id": "shoulders_subtle_tilt_hint",
+      "priority": 7,
+      "when": { "absSlope": { "gte": 0.05, "lt": 0.10 }, "bodyFrameOk": { "eq": true } },
+      "main": "Puedes inclinar un poco más los hombros.",
+      "detail": "Prueba a bajar un poco el hombro {lowerShoulder}; a veces un gesto mínimo cambia toda la foto."
+    },
+    {
+      "id": "arms_tight_both",
+      "priority": 8,
+      "when": { "armsTight": { "eq": true }, "bodyFrameOk": { "eq": true } },
+      "main": "Los brazos están muy pegados al cuerpo.",
+      "detail": "Separa ligeramente los codos del torso; deja un pequeño espacio de aire a cada lado."
+    },
+    {
+      "id": "arms_one_tight",
+      "priority": 8,
+      "when": { "oneArmTight": { "eq": true }, "armsTight": { "eq": false }, "bodyFrameOk": { "eq": true } },
+      "main": "Un brazo está más cerrado que el otro.",
+      "detail": "Afloja el codo {tightElbow}; intenta que ambos brazos tengan la misma separación del cuerpo."
+    },
+    {
+      "id": "arms_too_open",
+      "priority": 7,
+      "when": { "armsOpen": { "eq": true }, "bodyFrameOk": { "eq": true } },
+      "main": "Los brazos están muy abiertos.",
+      "detail": "Recoge un poco los codos hacia el torso; en retrato, menos espacio suele verse más elegante."
+    },
+    {
+      "id": "arms_relaxed_good",
+      "priority": 6,
+      "when": { "armsRelaxed": { "eq": true }, "bodyFrameOk": { "eq": true } },
+      "main": "Buena posición de brazos.",
+      "detail": "Los codos tienen una separación natural del cuerpo; mantén esa distancia."
+    },
+    {
+      "id": "arms_rigido_tight",
+      "priority": 8,
+      "when": { "armsTight": { "eq": true }, "predictedClass": { "eq": "rigido" }, "bodyFrameOk": { "eq": true } },
+      "main": "En pose rígida, los brazos no deben pegarse tanto.",
+      "detail": "Separa un poco el codo {tightElbow} de la cadera; la rigidez va en la postura, no en apretar los brazos."
+    },
+    {
+      "id": "arms_casual_open",
+      "priority": 7,
+      "when": { "armsOpen": { "eq": true }, "predictedClass": { "eq": "casual" }, "bodyFrameOk": { "eq": true } },
+      "main": "Los brazos están muy abiertos para un gesto casual.",
+      "detail": "Relaja el codo {looseElbow} y deja que los brazos caigan con más naturalidad."
+    },
+    {
+      "id": "arms_corporativo_tight",
+      "priority": 8,
+      "when": { "oneArmTight": { "eq": true }, "predictedClass": { "eq": "corporativo" }, "bodyFrameOk": { "eq": true } },
+      "main": "El brazo {tightElbow} está demasiado pegado.",
+      "detail": "En un retrato corporativo, un codo ligeramente separado del torso transmite más confianza."
+    },
+    {
+      "id": "body_angle_too_narrow",
+      "priority": 8,
+      "when": { "shoulderToFaceRatio": { "lt": 1.0 }, "bodyFrameOk": { "eq": true } },
+      "main": "Estás de frente a la cámara.",
+      "detail": "Gira ligeramente el torso hacia la {turnToward}; un poco de ángulo estiliza la silueta."
+    },
+    {
+      "id": "body_angle_too_wide",
+      "priority": 8,
+      "when": { "shoulderToFaceRatio": { "gt": 1.45 }, "bodyFrameOk": { "eq": true } },
+      "main": "El ángulo del cuerpo es muy marcado.",
+      "detail": "Vuelve un poco hacia la {awayFrom}; no hace falta girar tanto para que se note el perfil."
+    },
+    {
+      "id": "body_angle_good",
+      "priority": 6,
+      "when": { "angleGood": { "eq": true }, "bodyFrameOk": { "eq": true } },
+      "main": "Buen ángulo de cuerpo.",
+      "detail": "La rotación hacia la {turnToward} es equilibrada; mantén esa orientación."
+    },
+    {
+      "id": "body_turn_hint",
+      "priority": 7,
+      "when": { "shoulderToFaceRatio": { "lt": 1.05 }, "predictedClass": { "eq": "casual" }, "bodyFrameOk": { "eq": true } },
+      "main": "Prueba un giro suave del torso.",
+      "detail": "En casual queda bien girar un poco hacia la {turnToward}; evita quedarte completamente de frente."
+    },
+    {
+      "id": "body_angle_corporativo",
+      "priority": 7,
+      "when": { "shoulderToFaceRatio": { "lt": 1.02 }, "predictedClass": { "eq": "corporativo" }, "bodyFrameOk": { "eq": true } },
+      "main": "Un ligero ángulo aporta autoridad.",
+      "detail": "Gira el torso hacia la {turnToward}; en corporativo, un giro moderado transmite presencia."
+    },
+    {
+      "id": "head_tilt_strong",
+      "priority": 7,
+      "when": { "headTiltAbs": { "gt": 0.06 }, "bodyFrameOk": { "eq": true } },
+      "main": "La cabeza está muy inclinada.",
+      "detail": "Endereza un poco la cabeza; la inclinación hacia la {headTiltSide} es excesiva para el encuadre."
+    },
+    {
+      "id": "head_tilt_side",
+      "priority": 7,
+      "when": { "headTiltSide": { "ne": "centro" }, "headTiltAbs": { "gt": 0.04, "lte": 0.06 }, "bodyFrameOk": { "eq": true } },
+      "main": "Inclinación notable en la cabeza.",
+      "detail": "Si buscas un look más neutro, nivela la cabeza; ahora cae hacia la {headTiltSide}."
+    },
+    {
+      "id": "head_level_good",
+      "priority": 5,
+      "when": { "headTiltSide": { "eq": "centro" }, "bodyFrameOk": { "eq": true } },
+      "main": "La cabeza está bien nivelada.",
+      "detail": "Mantén la mirada relajada; la inclinación lateral es mínima y favorece el retrato."
+    },
+    {
+      "id": "head_tilt_casual_charm",
+      "priority": 6,
+      "when": { "headTiltSide": { "ne": "centro" }, "predictedClass": { "eq": "casual" }, "headTiltAbs": { "lte": 0.05 }, "bodyFrameOk": { "eq": true } },
+      "main": "Inclinación sutil y natural.",
+      "detail": "La cabeza ligeramente hacia la {headTiltSide} encaja bien con una pose casual."
+    },
+    {
+      "id": "head_tilt_rigido",
+      "priority": 7,
+      "when": { "headTiltAbs": { "gt": 0.05 }, "predictedClass": { "eq": "rigido" }, "bodyFrameOk": { "eq": true } },
+      "main": "En pose rígida, la cabeza conviene más recta.",
+      "detail": "Reduce la inclinación hacia la {headTiltSide}; la rigidez se nota mejor con la cabeza alineada."
+    },
+    {
+      "id": "chin_forward",
+      "priority": 7,
+      "when": { "chinForward": { "gt": 0.12 }, "bodyFrameOk": { "eq": true } },
+      "main": "El mentón está muy adelantado.",
+      "detail": "Retira ligeramente la barbilla hacia atrás; así se define mejor el cuello y la mandíbula."
+    },
+    {
+      "id": "chin_back",
+      "priority": 7,
+      "when": { "chinForward": { "lt": -0.05 }, "bodyFrameOk": { "eq": true } },
+      "main": "El mentón está muy retraído.",
+      "detail": "Saca un poco la barbilla hacia adelante; evita pegarla al cuello."
+    },
+    {
+      "id": "class_rigido_posture",
+      "priority": 6,
+      "when": { "predictedClass": { "eq": "rigido" }, "lackRigid": { "gte": 0.5 }, "bodyFrameOk": { "eq": true } },
+      "main": "Busca más rigidez en la pose.",
+      "detail": "Hombros firmes, brazos controlados y cabeza estable; la pose rígida pide contención, no relajación total."
+    },
+    {
+      "id": "class_casual_energy",
+      "priority": 6,
+      "when": { "predictedClass": { "eq": "casual" }, "lackRigid": { "gte": 0.5 }, "bodyFrameOk": { "eq": true } },
+      "main": "Suaviza la pose hacia un estilo casual.",
+      "detail": "Relaja hombros y brazos; deja caer el peso hacia el lado {lowerShoulder} y gira un poco hacia la {turnToward}."
+    },
+    {
+      "id": "class_corporativo_stance",
+      "priority": 6,
+      "when": { "predictedClass": { "eq": "corporativo" }, "lackRigid": { "gte": 0.5 }, "bodyFrameOk": { "eq": true } },
+      "main": "Afina la postura corporativa.",
+      "detail": "Espalda alta, hombros equilibrados y codos con separación moderada; transmite seguridad sin rigidez excesiva."
+    },
+    {
+      "id": "rigido_arms_too_loose",
+      "priority": 7,
+      "when": { "predictedClass": { "eq": "rigido" }, "armsOpen": { "eq": true }, "bodyFrameOk": { "eq": true } },
+      "main": "Los brazos están muy sueltos para pose rígida.",
+      "detail": "Acerca un poco el codo {looseElbow} al torso; la pose rígida pide brazos más contenidos."
+    },
+    {
+      "id": "casual_shoulders_flat",
+      "priority": 7,
+      "when": { "predictedClass": { "eq": "casual" }, "absSlope": { "lt": 0.04 }, "bodyFrameOk": { "eq": true } },
+      "main": "En casual, un hombro un poco más bajo ayuda.",
+      "detail": "Baja suavemente el hombro {lowerShoulder}; ese gesto relaja la foto al instante."
+    },
+    {
+      "id": "corporativo_head_neutral",
+      "priority": 6,
+      "when": { "predictedClass": { "eq": "corporativo" }, "headTiltSide": { "ne": "centro" }, "bodyFrameOk": { "eq": true } },
+      "main": "Cabeza más recta para el tono corporativo.",
+      "detail": "Nivela la inclinación hacia la {headTiltSide}; en retrato profesional suele funcionar mejor la cabeza centrada."
+    },
+    {
+      "id": "lackRigid_high",
+      "priority": 9,
+      "when": { "lackRigid": { "gte": 0.7 }, "bodyFrameOk": { "eq": true } },
+      "main": "Aún falta encajar con la pose objetivo.",
+      "detail": "Revisa hombros, ángulo del torso y brazos; pequeños ajustes te acercarán al estilo buscado."
+    },
+    {
+      "id": "lackRigid_high_rigido",
+      "priority": 9,
+      "when": { "lackRigid": { "gte": 0.75 }, "predictedClass": { "eq": "rigido" }, "bodyFrameOk": { "eq": true } },
+      "main": "La pose rígida aún no se refleja del todo.",
+      "detail": "Endurece la línea de hombros, controla el codo {tightElbow} y mantén la cabeza firme."
+    },
+    {
+      "id": "lackRigid_medium",
+      "priority": 7,
+      "when": { "lackRigid": { "gte": 0.4, "lt": 0.7 }, "bodyFrameOk": { "eq": true } },
+      "main": "Vas por buen camino.",
+      "detail": "Ya se nota el estilo; afina hombro {lowerShoulder}, giro hacia la {turnToward} y separación de brazos."
+    },
+    {
+      "id": "lackRigid_low",
+      "priority": 4,
+      "when": { "lackRigid": { "lt": 0.3 }, "bodyFrameOk": { "eq": true } },
+      "main": "La pose encaja muy bien.",
+      "detail": "Mantén la calma un instante; el gesto ya transmite lo que buscas."
+    },
+    {
+      "id": "lackRigid_low_casual",
+      "priority": 4,
+      "when": { "lackRigid": { "lt": 0.25 }, "predictedClass": { "eq": "casual" }, "bodyFrameOk": { "eq": true } },
+      "main": "Pose casual conseguida.",
+      "detail": "La inclinación del hombro {lowerShoulder} y el giro hacia la {turnToward} se ven naturales."
+    },
+    {
+      "id": "hand_on_hip",
+      "priority": 6,
+      "when": { "handOnHip": { "eq": true }, "bodyFrameOk": { "eq": true } },
+      "main": "Mano apoyada en la cadera.",
+      "detail": "Revisa que el codo del brazo del lado {hipSide} no quede demasiado abierto ni pegado al cuerpo."
+    },
+    {
+      "id": "turn_toward_hint",
+      "priority": 6,
+      "when": { "shoulderToFaceRatio": { "gte": 1.0, "lt": 1.05 }, "bodyFrameOk": { "eq": true } },
+      "main": "Un poco más de giro puede ayudar.",
+      "detail": "Rota suavemente el torso hacia la {turnToward}; a veces basta un gesto mínimo."
+    },
+    {
+      "id": "shoulders_relax_from_tilt",
+      "priority": 7,
+      "when": { "absSlope": { "gt": 0.18, "lte": 0.28 }, "bodyFrameOk": { "eq": true } },
+      "main": "Los hombros están algo inclinados.",
+      "detail": "Sube un poco el hombro {lowerShoulder} o baja el {higherShoulder} para equilibrar la línea."
+    },
+    {
+      "id": "frame_good_low_lackRigid",
+      "priority": 4,
+      "when": { "bodyFrameOk": { "eq": true }, "lackRigid": { "lt": 0.2 } },
+      "main": "Encuadre y pose alineados.",
+      "detail": "Estás listo; respira y mantén el gesto un momento antes de disparar."
+    },
+    {
+      "id": "arms_balance_elbows",
+      "priority": 7,
+      "when": { "oneArmTight": { "eq": true }, "predictedClass": { "eq": "casual" }, "bodyFrameOk": { "eq": true } },
+      "variants": [
+        {
+          "main": "Equilibra la separación de los codos.",
+          "detail": "El codo {tightElbow} está más cerrado; ábrelo un poco para que ambos brazos se vean simétricos."
+        },
+        {
+          "main": "Un brazo va más pegado que el otro.",
+          "detail": "Afloja el codo {tightElbow} y deja que caiga con la misma libertad que el brazo {looseElbow}."
+        }
+      ]
+    }
+  ],
+  "fallbacks": [
+    {
+      "id": "fallback_aura_ready",
+      "when": { "lackRigid": { "gte": 0.8 } },
+      "main": "+10000 de aura — casi foto automática.",
+      "detail": "Naturalidad {lackRigidPct}%. Un instante más estable y la cámara dispara sola."
+    },
+    {
+      "id": "fallback_aura_ok",
+      "when": { "lackRigid": { "gte": 0.6 } },
+      "main": "+10000 de aura en camino.",
+      "detail": "Vas al {lackRigidPct}%. Pequeños ajustes y cierras el logro."
+    },
+    {
+      "id": "fallback_aura_low",
+      "when": { "lackRigid": { "lt": 0.35 } },
+      "main": "Sigue ajustando la pose.",
+      "detail": "Solo {lackRigidPct}% de naturalidad — afloja hombros y brazos para subir el score."
+    },
+    {
+      "id": "fallback_default",
+      "default": true,
+      "main": "Sigue posando con calma.",
+      "detail": "Pequeños ajustes en hombros, brazos y cabeza y subes de nivel."
+    }
+  ]
+}

@@ -27,3 +27,13 @@ dist-ssr
 # OS
 .DS_Store
 Thumbs.db
+
+# IA: data de entrenamiento y binarios grandes (el modelo se carga desde CDN en runtime)
+IA/.venv/
+IA/mpii_dataset/
+IA/dataset_uiuc/
+IA/data/
+IA/dataset_final.csv
+IA/**/*.task
+*.tar.gz
+*.mat
