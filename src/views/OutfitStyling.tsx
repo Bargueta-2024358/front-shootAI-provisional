@@ -353,7 +353,21 @@ export default function OutfitStyling() {
 
         if (cancelled) return
 
-        const { groups, matchPercentage: matchPct } = normalizeOutfitsResponse(data || {})
+        let { groups, matchPercentage: matchPct } = normalizeOutfitsResponse(data || {})
+        if (groups.length === 0 && effectiveGender !== 'unisex') {
+          const relaxed = await apiJson<Record<string, unknown>>(
+            `/requirements/${activeProjectId}/process`,
+            {
+              method: 'POST',
+              body: JSON.stringify({ limit: 8, gender: 'unisex' }),
+            }
+          )
+          if (cancelled) return
+          const normalizedRelaxed = normalizeOutfitsResponse(relaxed || {})
+          groups = normalizedRelaxed.groups
+          matchPct = normalizedRelaxed.matchPercentage
+        }
+
         if (groups.length === 0) {
           setOutfitsByCategory([])
           setMatchPercentage(0)

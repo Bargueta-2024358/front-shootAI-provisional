@@ -43,29 +43,9 @@ const ACCEPTED_DOC_TYPES = new Set([
 const isImageFile = (f: File) => f.type.startsWith('image/')
 const isDocFile   = (f: File) => ACCEPTED_DOC_TYPES.has(f.type)
 const isAccepted  = (f: File) => isImageFile(f) || isDocFile(f)
-const DEMO_EMPRESA_ID =
-  (import.meta.env.VITE_DEMO_EMPRESA_ID as string | undefined)?.trim() ||
-  '520d6f4f-7dec-4821-9b17-2f54e35772fd'
-
-function inferFallbackCategories(notes: string, files: UploadedFile[]): string[] {
-  const text = notes.toLowerCase()
-  const categories = new Set<string>()
-
-  if (/street|urbano|urban|oversize|baggy/.test(text)) categories.add('streetwear')
-  if (/formal|elegante|boda|gala|traje/.test(text)) categories.add('formal')
-  if (/oficina|office|smart|business/.test(text)) categories.add('smart-casual')
-  if (/minimal|limpio|clean|neutro/.test(text)) categories.add('minimalist')
-  if (/sport|deport|gym|athletic/.test(text)) categories.add('sportswear')
-  if (/lux|lujo|premium/.test(text)) categories.add('luxury')
-  if (/vintage|retro/.test(text)) categories.add('vintage')
-  if (/casual|diario|relajado|weekend/.test(text)) categories.add('casual')
-
-  if (categories.size === 0) {
-    categories.add(files.some((item) => isImageFile(item.file)) ? 'casual' : 'minimalist')
-  }
-
-  return [...categories].slice(0, 4)
-}
+const DEMO_EMPRESA_ID = (
+  import.meta.env.VITE_DEMO_EMPRESA_ID as string | undefined
+)?.trim()
 
 // ---------------------------------------------------------------------------
 // Framer Motion variants — stagger reveal for analysis section
@@ -453,7 +433,9 @@ export default function PreShoot() {
 
     try {
       const formData = new FormData()
-      formData.append('empresaId', DEMO_EMPRESA_ID)
+      if (DEMO_EMPRESA_ID) {
+        formData.append('empresaId', DEMO_EMPRESA_ID)
+      }
       if (notes.trim()) {
         formData.append('freeText', notes.trim())
       }
@@ -493,16 +475,15 @@ export default function PreShoot() {
         ...moodTags,
       ]
       const tags = uniqTags(backendTags)
-      const resolvedTags =
-        tags.length > 0 ? tags : inferFallbackCategories(notes, files)
+      if (tags.length === 0) {
+        throw new Error(
+          'El backend no devolvió categorías de estilo para este proyecto.'
+        )
+      }
+      const resolvedTags = tags
 
       setCategoryResult({ tags: resolvedTags })
       clearOutfitsCache()
-      if (styleCategories.length === 0) {
-        setAnalysisError(
-          'No se detectaron categorías de estilo en las fotos. Activamos categorías locales para continuar.'
-        )
-      }
       savePreShootState({
         projectId: projectIdFromSave,
         gender: profileGender,

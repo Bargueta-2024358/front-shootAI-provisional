@@ -1,5 +1,6 @@
 let cachedApiBase: string | null = null
 let configLoaded = false
+const RENDER_API_BASE = 'https://server-shootai.onrender.com/api'
 
 function normalizeBase(url: string): string {
   const trimmed = url.trim()
@@ -15,35 +16,9 @@ function normalizeBase(url: string): string {
   return withLeadingSlash.replace(/\/$/, '')
 }
 
-function isLocalHost(): boolean {
-  if (typeof window === 'undefined') return false
-  const { hostname } = window.location
-  return hostname === 'localhost' || hostname === '127.0.0.1'
-}
-
 function resolveApiBaseSync(): string {
-  const configured = import.meta.env.VITE_API_URL as string | undefined
-
-  if (configured === '/api') return '/api'
-
-  if (
-    configured &&
-    !configured.includes('localhost') &&
-    !configured.includes('127.0.0.1')
-  ) {
-    return normalizeBase(configured)
-  }
-
-  if (!isLocalHost()) {
-    return normalizeBase(
-      (import.meta.env.VITE_API_URL as string | undefined) ||
-        'https://server-shootai.onrender.com/api'
-    )
-  }
-
-  return normalizeBase(
-    (import.meta.env.VITE_API_URL as string | undefined) || '/api'
-  )
+  // Hard-lock all calls to Render backend.
+  return normalizeBase(RENDER_API_BASE)
 }
 
 async function loadRuntimeConfig() {
@@ -68,6 +43,9 @@ export async function getApiBase(): Promise<string> {
   await loadRuntimeConfig()
   if (cachedApiBase) return cachedApiBase
   cachedApiBase = resolveApiBaseSync()
+  if (typeof window !== 'undefined') {
+    console.info('[api] backend base:', cachedApiBase)
+  }
   return cachedApiBase
 }
 
@@ -131,6 +109,9 @@ export async function apiFetch(
 
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
   const base = await getApiBase()
+  if (typeof window !== 'undefined') {
+    console.info('[api] request:', `${base}${normalizedPath}`)
+  }
 
   return fetch(`${base}${normalizedPath}`, {
     ...options,

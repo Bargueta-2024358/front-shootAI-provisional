@@ -54,7 +54,7 @@ export default function Navbar() {
                 light ? 'text-white' : 'text-black'
               }`}
             >
-              {profile?.displayName || 'Juan Perez'}
+              {profile?.displayName || 'Cuenta'}
             </summary>
             <div className="absolute right-0 top-full mt-3 min-w-[180px] border border-silver bg-white p-2 shadow-lg">
               <Link

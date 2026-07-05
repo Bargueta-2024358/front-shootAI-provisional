@@ -8,11 +8,15 @@ import {
   type ReactNode,
 } from 'react'
 import { apiJson } from '../lib/api'
-import { MOCK_USER } from '../lib/mockUser'
 import type { TargetGender, UserProfile } from '../types/auth'
 
+interface AuthUser {
+  id: string
+  email: string
+}
+
 interface AuthContextValue {
-  user: typeof MOCK_USER
+  user: AuthUser | null
   session: null
   profile: UserProfile | null
   loading: boolean
@@ -84,23 +88,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refreshProfile])
 
   const signIn = useCallback(async () => {
-    await refreshProfile()
+    const profileData = await refreshProfile()
+    if (!profileData) {
+      throw new Error(
+        'No se pudo autenticar con datos reales. Verifica que el backend esté disponible.'
+      )
+    }
   }, [refreshProfile])
 
-  const signUp = useCallback(async () => ({ needsEmailConfirmation: false }), [])
+  const signUp = useCallback(
+    async (payload: {
+      email: string
+      password: string
+      displayName: string
+      gender: TargetGender
+    }) => {
+      await apiJson<UserProfile>('/profile', {
+        method: 'PUT',
+        body: JSON.stringify({
+          displayName: payload.displayName,
+          gender: payload.gender,
+          email: payload.email,
+        }),
+      })
+      await refreshProfile()
+      return { needsEmailConfirmation: false }
+    },
+    [refreshProfile]
+  )
 
   const signOut = useCallback(async () => {
-    await refreshProfile()
-  }, [refreshProfile])
+    setProfile(null)
+  }, [])
 
   const completePendingRegistration = useCallback(async () => false, [])
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      user: MOCK_USER,
+      user: profile ? { id: profile.id, email: profile.email } : null,
       session: null,
       profile,
-      loading: false,
+      loading: profileLoading,
       profileLoading,
       accessToken: null,
       signIn,
