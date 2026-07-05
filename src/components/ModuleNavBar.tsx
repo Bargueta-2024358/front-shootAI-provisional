@@ -55,14 +55,14 @@ export default function ModuleNavBar({ current, variant = 'inline' }: ModuleNavB
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: 0.25 }}
-      className="flex border-t border-silver/60"
+      className="flex bg-black"
     >
       {buttons.map((btn) => (
         <button
           key={btn.to}
           type="button"
           onClick={() => navigate(btn.to)}
-          className="flex-1 border-r border-silver/60 py-4 font-display text-[10px] tracking-[0.18em] uppercase text-mid-gray transition-colors duration-200 last:border-r-0 hover:bg-smoke hover:text-black focus-visible:bg-smoke focus-visible:text-black focus-visible:outline-none"
+          className="flex-1 border-r border-white/10 py-4 font-display text-[10px] tracking-[0.18em] uppercase text-white/70 transition-colors duration-200 last:border-r-0 hover:bg-white/10 hover:text-white focus-visible:bg-white/10 focus-visible:text-white focus-visible:outline-none"
         >
           {btn.label}
         </button>
