@@ -1,4 +1,7 @@
-function resolveApiBase(): string {
+let cachedApiBase: string | null = null
+let configLoaded = false
+
+function resolveApiBaseSync(): string {
   const configured = import.meta.env.VITE_API_URL as string | undefined
 
   if (
@@ -19,7 +22,35 @@ function resolveApiBase(): string {
   return 'http://localhost:3000/api'
 }
 
-export const API_BASE = resolveApiBase()
+async function loadRuntimeConfig() {
+  if (configLoaded || typeof window === 'undefined') return
+  configLoaded = true
+
+  try {
+    const res = await fetch('/config.json', { cache: 'no-store' })
+    if (!res.ok) return
+    const cfg = (await res.json()) as { apiBaseUrl?: string }
+    if (
+      cfg.apiBaseUrl &&
+      !cfg.apiBaseUrl.includes('localhost') &&
+      !cfg.apiBaseUrl.includes('127.0.0.1')
+    ) {
+      cachedApiBase = cfg.apiBaseUrl.replace(/\/$/, '')
+    }
+  } catch {
+    // ignore — fall back to build-time resolution
+  }
+}
+
+export async function getApiBase(): Promise<string> {
+  if (cachedApiBase) return cachedApiBase
+  await loadRuntimeConfig()
+  if (cachedApiBase) return cachedApiBase
+  cachedApiBase = resolveApiBaseSync()
+  return cachedApiBase
+}
+
+export const API_BASE = resolveApiBaseSync()
 
 export async function apiFetch(
   path: string,
@@ -36,8 +67,9 @@ export async function apiFetch(
   }
 
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  const base = await getApiBase()
 
-  return fetch(`${API_BASE}${normalizedPath}`, {
+  return fetch(`${base}${normalizedPath}`, {
     ...options,
     headers,
   })

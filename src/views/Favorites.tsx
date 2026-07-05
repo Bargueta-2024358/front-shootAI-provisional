@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import Navbar from '../components/Navbar'
-import { apiJson } from '../lib/api'
+import { listFavorites } from '../lib/favoritesApi'
 import type { FavoriteOutfit } from '../types/auth'
 
 export default function Favorites() {
@@ -18,7 +18,7 @@ export default function Favorites() {
       setLoading(true)
       setError(null)
       try {
-        const data = await apiJson<FavoriteOutfit[]>('/favorites')
+        const data = await listFavorites()
         if (!cancelled) setFavorites(data)
       } catch (err) {
         if (!cancelled) {

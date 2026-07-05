@@ -11,7 +11,4 @@
     Content-Type = "video/mp4"
     Cache-Control = "public, max-age=31536000, immutable"
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# SPA fallback and /api proxy are generated in public/_redirects by scripts/netlify-prebuild.mjs

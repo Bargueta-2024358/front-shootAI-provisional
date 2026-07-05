@@ -8,14 +8,13 @@ import {
   type ReactNode,
 } from 'react'
 import { apiJson } from '../lib/api'
+import {
+  getProfileDirect,
+  updateProfileDirect,
+  uploadBodyPhotoDirect,
+} from '../lib/demoDb'
+import { MOCK_USER } from '../lib/mockUser'
 import type { TargetGender, UserProfile } from '../types/auth'
-
-const MOCK_USER_ID = '00000000-0000-4000-8000-000000000001'
-
-const MOCK_USER = {
-  id: MOCK_USER_ID,
-  email: 'juan.perez@demo.shootai',
-}
 
 interface AuthContextValue {
   user: typeof MOCK_USER
@@ -54,8 +53,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(data)
       return data
     } catch {
-      setProfile(null)
-      return null
+      const direct = await getProfileDirect()
+      setProfile(direct)
+      return direct
     } finally {
       setProfileLoading(false)
     }
@@ -63,12 +63,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateProfile = useCallback(
     async (payload: { displayName?: string; gender?: TargetGender }) => {
-      const data = await apiJson<UserProfile>('/profile', {
-        method: 'PUT',
-        body: JSON.stringify(payload),
-      })
-      setProfile(data)
-      return data
+      try {
+        const data = await apiJson<UserProfile>('/profile', {
+          method: 'PUT',
+          body: JSON.stringify(payload),
+        })
+        setProfile(data)
+        return data
+      } catch {
+        const data = await updateProfileDirect(payload)
+        setProfile(data)
+        return data
+      }
     },
     []
   )
@@ -77,12 +83,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const formData = new FormData()
     formData.append('image', file)
 
-    const data = await apiJson<UserProfile>('/profile/body-photo', {
-      method: 'POST',
-      body: formData,
-    })
-    setProfile(data)
-    return data
+    try {
+      const data = await apiJson<UserProfile>('/profile/body-photo', {
+        method: 'POST',
+        body: formData,
+      })
+      setProfile(data)
+      return data
+    } catch {
+      const data = await uploadBodyPhotoDirect(file)
+      setProfile(data)
+      return data
+    }
   }, [])
 
   useEffect(() => {

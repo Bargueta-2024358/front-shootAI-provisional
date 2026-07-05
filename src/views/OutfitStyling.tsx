@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Navbar from '../components/Navbar'
 import { WaitingOverlay } from './Waiting'
-import { apiFetch, apiJson } from '../lib/api'
+import { apiFetch } from '../lib/api'
+import { createFavorite, suggestFavoriteTheme } from '../lib/favoritesApi'
 import {
   clearShootSession,
   favoriteKey,
@@ -171,17 +172,11 @@ function SaveFavoriteModal({
     async function loadSuggestions() {
       setLoadingSuggestions(true)
       try {
-        const data = await apiJson<{ occasion: string; theme: string }>(
-          '/favorites/suggest-occasion',
-          {
-            method: 'POST',
-            body: JSON.stringify({
-              category: state.category,
-              event: event || undefined,
-              garments: state.outfit.garments,
-            }),
-          }
-        )
+        const data = await suggestFavoriteTheme({
+          category: state.category,
+          event: event || undefined,
+          garments: state.outfit.garments,
+        })
         if (!cancelled) {
           setTitle(data.theme || `Look ${state.category}`)
           setOccasion(data.occasion || state.category || 'Ocasion casual')
@@ -206,17 +201,14 @@ function SaveFavoriteModal({
     setSaving(true)
     setError(null)
     try {
-      await apiJson('/favorites', {
-        method: 'POST',
-        body: JSON.stringify({
-          projectId,
-          title,
-          category: state.category,
-          event,
-          occasion,
-          matchPercentage: state.matchPercentage,
-          garments: state.outfit.garments,
-        }),
+      await createFavorite({
+        projectId,
+        title,
+        category: state.category,
+        event,
+        occasion,
+        matchPercentage: state.matchPercentage,
+        garments: state.outfit.garments,
       })
       onSaved(state.outfit.id)
       onClose()

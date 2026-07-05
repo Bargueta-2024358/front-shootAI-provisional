@@ -1,0 +1,3 @@
+# URL pública del backend Express (sin /api al final)
+# Ejemplo: https://server-shootai.onrender.com
+# Copia este archivo como backend.url y pon tu URL real para builds locales de producción.
