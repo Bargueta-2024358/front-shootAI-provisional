@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Navbar from '../components/Navbar'
 import AIChatSidebar from '../components/AIChatSidebar'
@@ -6,6 +7,14 @@ import ModuleNavBar from '../components/ModuleNavBar'
 
 // Navbar height in px — keep in sync with h-20 in Navbar.tsx
 const NAVBAR_H = 80
+
+const SESSION_PROJECT_KEY = 'shootai:projectId'
+const SESSION_GENDER_KEY = 'shootai:gender'
+
+interface FlowState {
+  projectId?: string
+  gender?: string
+}
 
 // ---------------------------------------------------------------------------
 // CameraFeed
@@ -113,7 +122,7 @@ function CameraFeed() {
           Live-Shoot
         </p>
         <p className="mt-1 font-display text-[10px] tracking-[0.35em] uppercase text-white/60">
-          Módulo 02
+          Paso 3 · Cámara
         </p>
       </div>
 
@@ -128,6 +137,18 @@ function CameraFeed() {
 // ---------------------------------------------------------------------------
 
 export default function LiveShoot() {
+  const location = useLocation()
+  const flowState = (location.state as FlowState | null) ?? null
+
+  useEffect(() => {
+    if (flowState?.projectId) {
+      sessionStorage.setItem(SESSION_PROJECT_KEY, flowState.projectId)
+    }
+    if (flowState?.gender) {
+      sessionStorage.setItem(SESSION_GENDER_KEY, flowState.gender)
+    }
+  }, [flowState?.projectId, flowState?.gender])
+
   return (
     <>
       <Navbar />

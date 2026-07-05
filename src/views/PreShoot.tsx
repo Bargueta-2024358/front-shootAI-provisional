@@ -1,8 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import Navbar from '../components/Navbar'
 import ModuleNavBar from '../components/ModuleNavBar'
 import { WaitingOverlay } from './Waiting'
+import { useAuth } from '../context/AuthContext'
+import { apiFetch } from '../lib/api'
+import {
+  loadPreShootState,
+  savePreShootState,
+  type TargetGender,
+} from '../lib/sessionFlow'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -14,11 +22,15 @@ interface UploadedFile {
   previewUrl: string | null // null for non-image files
 }
 
-interface AnalysisResult {
-  recommendations: { label: string; description: string }[]
-  matchPercentage: number
-  colorPalette: { hex: string; name: string }[]
+interface CategoryResult {
+  tags: string[]
 }
+
+const GENDER_OPTIONS: { value: TargetGender; label: string }[] = [
+  { value: 'woman', label: 'Mujer' },
+  { value: 'man', label: 'Hombre' },
+  { value: 'unisex', label: 'Unisex' },
+]
 
 // ---------------------------------------------------------------------------
 // File type helpers
@@ -35,77 +47,6 @@ const isImageFile = (f: File) => f.type.startsWith('image/')
 const isDocFile   = (f: File) => ACCEPTED_DOC_TYPES.has(f.type)
 const isAccepted  = (f: File) => isImageFile(f) || isDocFile(f)
 
-// TODO: cuando el backend esté disponible, los archivos de documento
-// (PDF/DOC/TXT) se usarán para extraer texto/contexto adicional para
-// el análisis de estilismo, no solo las imágenes.
-
-// ---------------------------------------------------------------------------
-// Mock data
-// TODO: reemplazar con llamada a la API del backend cuando esté disponible
-// (endpoint esperado: POST /api/preshoot/analyze con la imagen,
-// debe devolver { recommendations, matchPercentage, colorPalette })
-// ---------------------------------------------------------------------------
-
-const MOCK_RECOMMENDATIONS = [
-  {
-    label: 'Blazer estructurado',
-    description: 'Silueta de hombros marcados para equilibrar las proporciones y proyectar autoridad editorial.',
-  },
-  {
-    label: 'Pantalón de tiro alto',
-    description: 'Alarga visualmente la figura y crea una línea limpia que favorece el plano medio.',
-  },
-  {
-    label: 'Tejido fluido monocromático',
-    description: 'Reduce la fragmentación visual y permite que la pose y la luz sean los protagonistas.',
-  },
-  {
-    label: 'Zapato de cuero minimalista',
-    description: 'Aporta continuidad de línea sin competir con la prenda principal, ancla el look al suelo editorial.',
-  },
-]
-
-// TODO: paleta de color real → reemplazar con análisis de color dominante
-// de la imagen cuando el backend esté disponible.
-const MOCK_PALETTES: { colors: { hex: string; name: string }[]; matchPercentage: number }[] = [
-  {
-    matchPercentage: 87,
-    colors: [
-      { hex: '#2C2C2C', name: 'Grafito editorial' },
-      { hex: '#C8B8A2', name: 'Arena cálida' },
-      { hex: '#E8E0D5', name: 'Blanco roto' },
-      { hex: '#6B4F3A', name: 'Caoba profundo' },
-    ],
-  },
-  {
-    matchPercentage: 82,
-    colors: [
-      { hex: '#3D4A5C', name: 'Pizarra nórdica' },
-      { hex: '#B8C4D0', name: 'Niebla ártica' },
-      { hex: '#8BA3B0', name: 'Cobre helado' },
-      { hex: '#F0F4F7', name: 'Blanco glacial' },
-    ],
-  },
-  {
-    matchPercentage: 91,
-    colors: [
-      { hex: '#C4704A', name: 'Terracota viva' },
-      { hex: '#D4944A', name: 'Azafrán editorial' },
-      { hex: '#F2DDB0', name: 'Crema solar' },
-      { hex: '#8B5030', name: 'Tierra siena' },
-    ],
-  },
-  {
-    matchPercentage: 79,
-    colors: [
-      { hex: '#1A1A1A', name: 'Negro absoluto' },
-      { hex: '#A82837', name: 'Carmesí editorial' },
-      { hex: '#F8F5EE', name: 'Marfil puro' },
-      { hex: '#9E6B3A', name: 'Cobre bruñido' },
-    ],
-  },
-]
-
 // ---------------------------------------------------------------------------
 // Framer Motion variants — stagger reveal for analysis section
 // ---------------------------------------------------------------------------
@@ -120,12 +61,18 @@ const blockVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } },
 }
 
-const cardVariants = {
-  hidden:  { opacity: 0, x: 20 },
-  visible: (i: number) => ({
-    opacity: 1, x: 0,
-    transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1], delay: i * 0.08 },
-  }),
+function syncPreShootSession(
+  projectId: string,
+  sessionGender: TargetGender,
+  tags: string[],
+  sessionNotes: string
+) {
+  savePreShootState({
+    projectId,
+    gender: sessionGender,
+    tags,
+    notes: sessionNotes,
+  })
 }
 
 // ---------------------------------------------------------------------------
@@ -161,7 +108,19 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 // AnalysisPanel
 // ---------------------------------------------------------------------------
 
-function AnalysisPanel({ result, loading }: { result: AnalysisResult | null; loading: boolean }) {
+function AnalysisPanel({
+  result,
+  loading,
+  projectId,
+  onGoOutfits,
+  onGoCamera,
+}: {
+  result: CategoryResult | null
+  loading: boolean
+  projectId: string | null
+  onGoOutfits: () => void
+  onGoCamera: () => void
+}) {
   return (
     <AnimatePresence mode="wait">
       {(loading || result) && (
@@ -175,14 +134,14 @@ function AnalysisPanel({ result, loading }: { result: AnalysisResult | null; loa
           {/* Divider + heading */}
           <div className="mb-10 border-t border-silver/50 pt-8">
             <p className="font-display text-[10px] tracking-[0.45em] uppercase text-mid-gray">
-              Análisis de sesión
+              Paso 1 · Categorías de estilo
             </p>
           </div>
 
           {loading && (
             <div className="flex items-center gap-4 py-8">
               <span className="h-5 w-5 animate-spin rounded-full border-2 border-silver border-t-caramel" />
-              <p className="font-body text-sm text-charcoal">Analizando archivos…</p>
+              <p className="font-body text-sm text-charcoal">Detectando categorías…</p>
             </div>
           )}
 
@@ -193,83 +152,41 @@ function AnalysisPanel({ result, loading }: { result: AnalysisResult | null; loa
               animate="visible"
               className="flex flex-col gap-10"
             >
-              {/* ── 1. Compatibilidad de silueta ── */}
               <motion.div variants={blockVariants}>
-                <SectionLabel>Compatibilidad de silueta</SectionLabel>
-                <div
-                  className="rounded-sm p-6 shadow-lg shadow-black/10"
-                  style={{ backgroundColor: '#7A5A40' }}
-                >
-                  <div className="flex items-end gap-3">
-                    <span className="font-display text-6xl font-semibold text-white leading-none">
-                      {result.matchPercentage}
-                      <span className="text-3xl text-[#EEDFC9]">%</span>
-                    </span>
-                    <span className="font-body text-sm text-white/70 mb-1.5">de match</span>
-                  </div>
-                  <div className="mt-5 h-[3px] w-full rounded-full bg-white/20 overflow-hidden">
-                    <motion.div
-                      className="h-full rounded-full bg-white"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${result.matchPercentage}%` }}
-                      transition={{ duration: 1.1, ease: 'easeOut', delay: 0.2 }}
-                    />
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* ── 2. Recomendación de prendas — horizontal scroll ── */}
-              <motion.div variants={blockVariants}>
-                <SectionLabel>Recomendación de prendas</SectionLabel>
-                <div className="overflow-x-auto overflow-y-hidden scroll-caramel-x pb-3">
-                  <div className="flex gap-4" style={{ minWidth: 'max-content' }}>
-                    {result.recommendations.map((rec, i) => (
-                      <motion.div
-                        key={rec.label}
-                        custom={i}
-                        variants={cardVariants}
-                        initial="hidden"
-                        animate="visible"
-                        className="w-[270px] flex-shrink-0 rounded-sm p-5 shadow-lg shadow-black/10 transition-transform duration-300 hover:scale-[1.02]"
-                        style={{ backgroundColor: '#7A5A40' }}
-                      >
-                        <span className="font-display text-xs text-[#EEDFC9] select-none">
-                          {String(i + 1).padStart(2, '0')}
-                        </span>
-                        <p className="mt-2 font-display text-sm font-medium text-white">{rec.label}</p>
-                        <p className="mt-2 font-body text-sm leading-relaxed text-white/75">
-                          {rec.description}
-                        </p>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* ── 3. Paleta de color sugerida ── */}
-              <motion.div variants={blockVariants}>
-                <SectionLabel>Paleta de color sugerida</SectionLabel>
-                <div className="flex flex-wrap gap-4">
-                  {result.colorPalette.map((color, i) => (
-                    <motion.div
-                      key={color.hex}
-                      initial={{ opacity: 0, scale: 0.8 }}
+                <SectionLabel>Categorías detectadas</SectionLabel>
+                <div className="flex flex-wrap gap-2">
+                  {(result.tags ?? []).map((tag, i) => (
+                    <motion.span
+                      key={`${tag}-${i}`}
+                      initial={{ opacity: 0, scale: 0.85 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.38, ease: 'easeOut', delay: 0.1 + i * 0.07 }}
-                      className="flex flex-col items-center gap-2"
+                      transition={{ duration: 0.3, ease: 'easeOut', delay: 0.05 + i * 0.04 }}
+                      className="rounded-sm border border-[#7A5A40]/30 bg-[#7A5A40]/10 px-3 py-1.5 font-body text-xs uppercase tracking-wide text-charcoal"
                     >
-                      <div
-                        className="h-16 w-16 rounded-md shadow-md ring-1 ring-black/8"
-                        style={{ backgroundColor: color.hex }}
-                        title={color.hex}
-                      />
-                      <p className="font-body text-[10px] text-charcoal text-center max-w-[68px] leading-tight">
-                        {color.name}
-                      </p>
-                    </motion.div>
+                      {tag}
+                    </motion.span>
                   ))}
                 </div>
               </motion.div>
+
+              {projectId && (
+                <motion.div variants={blockVariants} className="flex flex-wrap gap-4 pt-2">
+                  <button
+                    type="button"
+                    onClick={onGoOutfits}
+                    className="bg-[#A67B5B] px-10 py-4 font-display text-xs tracking-[0.25em] uppercase text-white transition-colors hover:bg-[#8B6449] focus-visible:bg-[#8B6449]"
+                  >
+                    Ir a outfits
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onGoCamera}
+                    className="border border-charcoal px-10 py-4 font-display text-xs tracking-[0.25em] uppercase text-charcoal transition-colors hover:border-caramel hover:text-caramel"
+                  >
+                    Ir a cámara
+                  </button>
+                </motion.div>
+              )}
             </motion.div>
           )}
         </motion.div>
@@ -360,7 +277,8 @@ function FileDropzone({ files, onAdd, onRemove }: FileDropzoneProps) {
             {dragging ? 'Suelta los archivos aquí' : 'Arrastra archivos o haz clic para seleccionar'}
           </p>
           <p className="mt-1.5 font-body text-xs text-charcoal/70">
-            Imágenes (PNG, JPG, WEBP), documentos (PDF, DOC, DOCX, TXT) — múltiples archivos permitidos
+            Fotos de outfits de referencia (PNG, JPG, WEBP) o documentos (PDF, DOC, TXT). Las imágenes
+            solo sirven para detectar categorías; tus outfits usarán ropa que te favorezca.
           </p>
         </div>
       </div>
@@ -426,14 +344,58 @@ function FileDropzone({ files, onAdd, onRemove }: FileDropzoneProps) {
 // ---------------------------------------------------------------------------
 
 export default function PreShoot() {
+  const navigate = useNavigate()
+  const { profile } = useAuth()
   const [files, setFiles] = useState<UploadedFile[]>([])
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
+  const [categoryResult, setCategoryResult] = useState<CategoryResult | null>(null)
+  const [projectId, setProjectId] = useState<string | null>(null)
   const [analyzing, setAnalyzing] = useState(false)
-  const [showWaiting, setShowWaiting] = useState(false)
-
-  // TODO: este texto se debe enviar junto con las imágenes/documentos
-  // al backend como contexto adicional para el análisis de estilismo.
+  const [analysisError, setAnalysisError] = useState<string | null>(null)
   const [notes, setNotes] = useState('')
+  const [gender, setGender] = useState<TargetGender>(
+    profile?.gender === 'kids' ? 'unisex' : (profile?.gender ?? 'unisex')
+  )
+
+  useEffect(() => {
+    if (profile?.gender && profile.gender !== 'kids') {
+      setGender(profile.gender)
+    }
+  }, [profile?.gender])
+
+  useEffect(() => {
+    const saved = loadPreShootState()
+    if (!saved) return
+    setProjectId(saved.projectId)
+    setGender(saved.gender)
+    if (saved.tags.length > 0) {
+      setCategoryResult({ tags: saved.tags })
+    }
+    if (saved.notes) {
+      setNotes(saved.notes)
+    }
+  }, [])
+
+  const goToOutfits = useCallback(() => {
+    if (!projectId) return
+    syncPreShootSession(
+      projectId,
+      gender,
+      categoryResult?.tags ?? [],
+      notes.trim()
+    )
+    navigate('/outfit-styling', { state: { projectId, gender } })
+  }, [navigate, projectId, gender, categoryResult?.tags, notes])
+
+  const goToCamera = useCallback(() => {
+    if (!projectId) return
+    syncPreShootSession(
+      projectId,
+      gender,
+      categoryResult?.tags ?? [],
+      notes.trim()
+    )
+    navigate('/live-shoot', { state: { projectId, gender } })
+  }, [navigate, projectId, gender, categoryResult?.tags, notes])
 
   // Cleanup object URLs on unmount
   useEffect(() => {
@@ -463,22 +425,70 @@ export default function PreShoot() {
     })
   }, [])
 
-  // Part A: analysis is triggered ONLY by the "Analizar" button
-  // TODO: reemplazar con llamada a la API del backend cuando esté disponible
-  // (endpoint esperado: POST /api/preshoot/analyze con la imagen,
-  // debe devolver { recommendations, matchPercentage, colorPalette })
-  function analyzeImages() {
+  async function analyzeImages() {
     if (analyzing) return
     setAnalyzing(true)
-    setTimeout(() => {
-      const picked = MOCK_PALETTES[Math.floor(Math.random() * MOCK_PALETTES.length)]
-      setAnalyzing(false)
-      setAnalysisResult({
-        recommendations: MOCK_RECOMMENDATIONS,
-        matchPercentage: picked.matchPercentage,
-        colorPalette: picked.colors,
+    setAnalysisError(null)
+
+    try {
+      const formData = new FormData()
+      if (notes.trim()) {
+        formData.append('freeText', notes.trim())
+      }
+      for (const item of files) {
+        if (isImageFile(item.file)) {
+          formData.append('images', item.file)
+        } else {
+          formData.append('documents', item.file)
+        }
+      }
+
+      const saveRes = await apiFetch('/requirements', {
+        method: 'POST',
+        body: formData,
       })
-    }, 1400)
+      const saveJson = await saveRes.json()
+      if (!saveRes.ok) {
+        throw new Error(saveJson?.error?.message || 'Error al guardar los requerimientos')
+      }
+
+      const projectIdFromSave = saveJson.data?.projectId
+      if (!projectIdFromSave) {
+        throw new Error('No se recibió projectId del servidor')
+      }
+
+      setProjectId(projectIdFromSave)
+
+      const categoriesRes = await apiFetch(
+        `/requirements/${projectIdFromSave}/categories`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ gender }),
+        }
+      )
+      const categoriesJson = await categoriesRes.json()
+      if (!categoriesRes.ok) {
+        throw new Error(categoriesJson?.error?.message || 'Error al detectar categorías')
+      }
+
+      const data = categoriesJson.data
+      const tags: string[] = data.tags || [
+        ...(data.extractedCategories || []),
+        ...(data.aestheticTags || []),
+      ]
+
+      setCategoryResult({ tags })
+      savePreShootState({
+        projectId: projectIdFromSave,
+        gender,
+        tags,
+        notes: notes.trim(),
+      })
+    } catch (err) {
+      setAnalysisError(err instanceof Error ? err.message : 'Error inesperado durante el análisis')
+    } finally {
+      setAnalyzing(false)
+    }
   }
 
   const canAnalyze = files.length > 0 && !analyzing
@@ -487,12 +497,10 @@ export default function PreShoot() {
     <>
       <Navbar />
 
-      {/* BOTÓN PROVISIONAL — eliminar cuando el flujo real de espera esté
-          conectado al backend y se dispare automáticamente al procesar la imagen. */}
       <WaitingOverlay
-        isOpen={showWaiting}
-        onComplete={() => setShowWaiting(false)}
-        hideCancelButton={false}
+        isOpen={analyzing}
+        autoDismiss={false}
+        hideCancelButton
       />
 
       {/* ── Dark header ── */}
@@ -514,8 +522,8 @@ export default function PreShoot() {
             Pre-Shoot
           </h1>
           <p className="mt-5 max-w-2xl font-body text-base leading-relaxed text-charcoal">
-            Sube imágenes y documentos de referencia para que el sistema analice siluetas,
-            recomiende prendas y genere una paleta editorial personalizada antes de la sesión.
+            Sube imágenes de outfits de referencia para detectar categorías de estilo. La ropa
+            recomendada se adaptará a tu foto base y a lo que te favorece.
           </p>
         </div>
 
@@ -530,7 +538,7 @@ export default function PreShoot() {
           {/* ── Notes textarea ── */}
           <section className="py-16 md:py-20">
             <p className="font-display text-[10px] tracking-[0.38em] uppercase text-mid-gray mb-4">
-              Notas de contexto
+              ¿Qué deseas?
             </p>
             <div className="relative">
               <textarea
@@ -547,9 +555,31 @@ export default function PreShoot() {
                   className="pointer-events-none absolute left-0 top-0 flex h-full w-full items-center justify-center font-body text-sm italic text-mid-gray/50"
                   aria-hidden
                 >
-                  Escribe…
+                  Ej: &quot;look casual para oficina&quot; o sube fotos de outfits de referencia para detectar su categoría…
                 </span>
               )}
+            </div>
+
+            <div className="mt-8">
+              <p className="font-display text-[10px] tracking-[0.38em] uppercase text-mid-gray mb-3">
+                Para quién
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {GENDER_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setGender(option.value)}
+                    className={`border px-4 py-2 font-display text-[10px] tracking-[0.2em] uppercase transition-colors ${
+                      gender === option.value
+                        ? 'border-caramel bg-caramel text-white'
+                        : 'border-silver text-mid-gray hover:border-caramel hover:text-caramel'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </section>
 
@@ -558,25 +588,15 @@ export default function PreShoot() {
 
           {/* ── File dropzone ── */}
           <section className="py-16 md:py-20">
-            <div className="mb-8 flex flex-wrap items-baseline justify-between gap-4">
-              <div>
-                <p className="font-display text-[10px] tracking-[0.38em] uppercase text-mid-gray">
-                  Archivos de referencia
-                </p>
-                <p className="mt-2 font-body text-sm text-charcoal/70">
-                  {files.length === 0
-                    ? 'Aún no has subido archivos.'
-                    : `${files.length} archivo${files.length > 1 ? 's' : ''} cargado${files.length > 1 ? 's' : ''}.`}
-                </p>
-              </div>
-              {/* BOTÓN PROVISIONAL */}
-              <button
-                type="button"
-                className="border border-silver px-4 py-2 font-display text-[9px] tracking-[0.2em] uppercase text-mid-gray/70 transition-colors hover:border-caramel hover:text-caramel"
-                onClick={() => setShowWaiting(true)}
-              >
-                Ver pantalla de espera (demo)
-              </button>
+            <div className="mb-8">
+              <p className="font-display text-[10px] tracking-[0.38em] uppercase text-mid-gray">
+                Imágenes de referencia (solo categorías)
+              </p>
+              <p className="mt-2 font-body text-sm text-charcoal/70">
+                {files.length === 0
+                  ? 'Sube fotos de outfits completos como referencia de estilo (ej. streetwear, formal, casual).'
+                  : `${files.length} archivo${files.length > 1 ? 's' : ''} cargado${files.length > 1 ? 's' : ''}.`}
+              </p>
             </div>
 
             <FileDropzone files={files} onAdd={handleAdd} onRemove={handleRemove} />
@@ -598,7 +618,7 @@ export default function PreShoot() {
                     <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                     Analizando…
                   </>
-                ) : analysisResult ? (
+                ) : categoryResult ? (
                   'Analizar de nuevo'
                 ) : (
                   'Analizar'
@@ -610,36 +630,28 @@ export default function PreShoot() {
                   Sube al menos un archivo para habilitar el análisis
                 </p>
               )}
+              {analysisError && (
+                <p className="font-body text-xs text-red-600" role="alert">
+                  {analysisError}
+                </p>
+              )}
             </div>
           </section>
 
           {/* Thin divider */}
           <div className="border-t border-silver/40" />
 
-          {/* ── Analysis panel ── */}
+          {/* ── Categories panel ── */}
           <section className="py-16 md:py-20">
-            <AnimatePresence mode="wait">
-              {!analyzing && !analysisResult ? (
-                <motion.div
-                  key="empty"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex flex-col items-center justify-center gap-4 border border-dashed border-silver/60 py-20 text-center"
-                >
-                  <svg className="text-silver/70" width="34" height="34" viewBox="0 0 32 32"
-                    fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
-                    <circle cx="16" cy="16" r="13" />
-                    <path d="M16 10v6M16 20v2" strokeLinecap="round" />
-                  </svg>
-                  <p className="font-display text-sm text-mid-gray">
-                    El análisis aparecerá aquí<br />una vez presiones "Analizar"
-                  </p>
-                </motion.div>
-              ) : (
-                <AnalysisPanel result={analysisResult} loading={analyzing} />
-              )}
-            </AnimatePresence>
+            {(analyzing || categoryResult) && (
+              <AnalysisPanel
+                result={categoryResult}
+                loading={analyzing}
+                projectId={projectId}
+                onGoOutfits={goToOutfits}
+                onGoCamera={goToCamera}
+              />
+            )}
           </section>
 
         </div>
