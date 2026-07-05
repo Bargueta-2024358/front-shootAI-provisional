@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Navbar from '../components/Navbar'
 import AIChatSidebar from '../components/AIChatSidebar'
+import ModuleNavBar from '../components/ModuleNavBar'
 
 // Navbar height in px — keep in sync with h-20 in Navbar.tsx
 const NAVBAR_H = 80
@@ -118,43 +118,8 @@ function CameraFeed() {
       </div>
 
       {/* Navigation buttons — overlay strip at the very bottom */}
-      <NavBar />
+      <ModuleNavBar current="live-shoot" variant="overlay" />
     </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// NavBar — overlay strip with navigation buttons
-// ---------------------------------------------------------------------------
-
-function NavBar() {
-  const navigate = useNavigate()
-
-  const buttons = [
-    { label: 'Model Simulator', to: '/model-simulator', delay: 0.1 },
-    { label: 'Outfit Styling',  to: '/outfit-styling',  delay: 0.17 },
-    { label: 'Pre-Shoot',       to: '/pre-shoot',       delay: 0.24 },
-  ]
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.3 }}
-      className="absolute inset-x-0 bottom-0 z-20 flex backdrop-blur-sm"
-      style={{ backgroundColor: 'rgba(17,17,17,0.55)' }}
-    >
-      {buttons.map((btn) => (
-        <button
-          key={btn.to}
-          type="button"
-          onClick={() => navigate(btn.to)}
-          className="flex-1 border-r border-white/10 py-3 font-display text-[10px] tracking-[0.18em] uppercase text-white/70 transition-colors duration-200 last:border-r-0 hover:bg-white/10 hover:text-white focus-visible:bg-white/10 focus-visible:text-white"
-        >
-          {btn.label}
-        </button>
-      ))}
-    </motion.div>
   )
 }
 

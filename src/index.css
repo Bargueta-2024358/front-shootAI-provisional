@@ -36,6 +36,22 @@
     background-color: #A67B5B;
     border-radius: 4px;
   }
+
+  /* Horizontal variant — used in PreShoot recommendation cards row */
+  .scroll-caramel-x {
+    scrollbar-width: thin;
+    scrollbar-color: #A67B5B transparent;
+  }
+  .scroll-caramel-x::-webkit-scrollbar {
+    height: 6px;
+  }
+  .scroll-caramel-x::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scroll-caramel-x::-webkit-scrollbar-thumb {
+    background-color: #A67B5B;
+    border-radius: 4px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
