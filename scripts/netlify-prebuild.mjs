@@ -18,7 +18,16 @@ function prepareBackend() {
     console.log(`Using local backend: ${localBackend}`)
     fs.cpSync(localBackend, backendDir, {
       recursive: true,
-      filter: (src) => !src.includes(`${path.sep}node_modules${path.sep}`),
+      filter: (src) => {
+        const relative = path.relative(localBackend, src)
+        if (!relative) return true
+
+        const topSegment = relative.split(path.sep)[0]
+        if (['.git', '.cursor', 'docs', 'test', 'node_modules'].includes(topSegment)) {
+          return false
+        }
+        return true
+      },
     })
   } else {
     console.log(`Cloning backend: ${backendRepo}`)
@@ -42,6 +51,10 @@ fs.writeFileSync(
 
 const redirectsPath = path.join(root, 'public', '_redirects')
 fs.mkdirSync(path.dirname(redirectsPath), { recursive: true })
-fs.writeFileSync(redirectsPath, '/*    /index.html   200\n', 'utf8')
+fs.writeFileSync(
+  redirectsPath,
+  '/api/*  /.netlify/functions/api/:splat  200\n/*  /index.html  200\n',
+  'utf8'
+)
 
 console.log('Netlify API: /api/* -> /.netlify/functions/api/:splat')

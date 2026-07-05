@@ -2,7 +2,17 @@ let cachedApiBase: string | null = null
 let configLoaded = false
 
 function normalizeBase(url: string): string {
-  return url.replace(/\/$/, '')
+  const trimmed = url.trim()
+  if (!trimmed) return '/api'
+
+  // Absolute URLs (https://api.example.com) keep protocol/host as-is.
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed.replace(/\/$/, '')
+  }
+
+  // Relative API bases are always normalized to root-based paths.
+  const withLeadingSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`
+  return withLeadingSlash.replace(/\/$/, '')
 }
 
 function isLocalHost(): boolean {
@@ -41,8 +51,8 @@ async function loadRuntimeConfig() {
     if (!res.ok) return
     const cfg = (await res.json()) as { apiBaseUrl?: string }
 
-    if (cfg.apiBaseUrl?.startsWith('/')) {
-      cachedApiBase = cfg.apiBaseUrl
+    if (cfg.apiBaseUrl) {
+      cachedApiBase = normalizeBase(cfg.apiBaseUrl)
     }
   } catch {
     // ignore — fall back to build-time resolution
