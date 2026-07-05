@@ -299,7 +299,41 @@ body::after {
 .slide > * { z-index: 1; }
 
 /* ── CTA slide specific ── */
-#s9 { align-items: center; text-align: center; }
+#s10 { align-items: center; text-align: center; }
+
+/* ── Rubric slide ── */
+.rub-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: clamp(.7rem,1.5vw,1.2rem); width: 100%; margin-top: .5rem; }
+.rub-card {
+  border: 1px solid rgba(200,190,178,.1);
+  padding: clamp(.9rem,1.8vw,1.5rem);
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; gap: .5rem;
+}
+.rub-card::after {
+  content: ''; position: absolute;
+  top: 0; left: 0; width: 0; height: 2px;
+  background: var(--caramel);
+  transition: width 1s cubic-bezier(0.22,1,0.36,1) var(--d,.1s);
+}
+.slide.active .rub-card::after { width: 100%; }
+.rub-pct {
+  font-family: var(--font-d); font-size: clamp(2.2rem,4.5vw,4rem);
+  font-weight: 700; color: rgba(166,123,91,.22); line-height: 1;
+  position: absolute; top: .6rem; right: .8rem;
+}
+.rub-title { font-family: var(--font-d); font-size: clamp(.85rem,1.5vw,1.15rem); font-weight: 600; color: var(--white); }
+.rub-pts { font-family: var(--font-d); font-size: clamp(.65rem,.85vw,.8rem); color: var(--caramel); letter-spacing: .15em; margin-bottom: .15rem; }
+.rub-li { font-family: var(--font-b); font-size: clamp(.58rem,.75vw,.72rem); color: var(--silver); line-height: 1.6; padding-left: .9rem; position: relative; }
+.rub-li::before { content: '—'; position: absolute; left: 0; color: rgba(166,123,91,.4); }
+.rub-bonus-row { display: flex; gap: clamp(.8rem,2vw,2rem); margin-top: .25rem; }
+.rub-bonus {
+  border: 1px solid rgba(166,123,91,.2);
+  padding: .45rem clamp(.7rem,1.5vw,1.2rem);
+  font-family: var(--font-d); font-size: clamp(.6rem,.78vw,.73rem);
+  letter-spacing: .1em; color: var(--caramel);
+  display: flex; align-items: center; gap: .4rem;
+}
+.rub-bonus-pts { font-size: 1.15em; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -768,10 +802,105 @@ body::after {
 </section>
 
 <!-- ══════════════════════════════════════
-     10 — CTA / CIERRE
+     10 — RÚBRICA
 ══════════════════════════════════════ -->
 <section class="slide" id="s9">
-  <div class="bg-num" style="right:50%;transform:translateX(50%);opacity:.018;bottom:-8vh">10</div>
+  <div class="bg-num">10</div>
+  <div class="col full" style="gap:clamp(.6rem,1.5vw,1.2rem)">
+    <div class="a" style="--d:.05s;display:flex;align-items:baseline;justify-content:space-between;width:100%">
+      <p class="lbl">Cómo se evalúa</p>
+      <p style="font-family:var(--font-d);font-size:clamp(.65rem,.85vw,.82rem);letter-spacing:.22em;color:var(--caramel);text-transform:uppercase">100pts · Build in Public · Be the best</p>
+    </div>
+    <div>
+      <div class="clip-wrap"><span class="clip-inner h2" style="--d:.1s">Shoot AI vs</span></div>
+      <div class="clip-wrap"><span class="clip-inner h2 it em" style="--d:.2s">la rúbrica.</span></div>
+    </div>
+    <div class="rule-h" style="opacity:.4"></div>
+
+    <div class="rub-grid">
+      <!-- TÉCNICO 50% -->
+      <div class="rub-card a" style="--d:.3s">
+        <span class="rub-pct">50%</span>
+        <p class="rub-pts">Aspecto técnico</p>
+        <p class="rub-title">Complejidad &amp; ejecución</p>
+        <div style="margin-top:.4rem;display:flex;flex-direction:column;gap:.18rem">
+          <p class="rub-li">React 18 + TypeScript + Vite — arquitectura modular lista para escalar</p>
+          <p class="rub-li">4 módulos funcionales: Pre-Shoot, Live-Shoot, Model Sim, Outfit Styling</p>
+          <p class="rub-li">Lazy loading por ruta, code-splitting con manualChunks</p>
+          <p class="rub-li">Cursor AI como herramienta central de desarrollo</p>
+          <p class="rub-li">Demo desplegada en producción — Netlify CDN</p>
+        </div>
+        <div style="margin-top:auto;padding-top:.6rem;border-top:1px solid rgba(200,190,178,.07);display:flex;justify-content:space-between">
+          <span style="font-family:var(--font-d);font-size:.6rem;letter-spacing:.2em;color:var(--mid);text-transform:uppercase">20 Complejidad</span>
+          <span style="font-family:var(--font-d);font-size:.6rem;letter-spacing:.2em;color:var(--mid);text-transform:uppercase">20 Calidad</span>
+          <span style="font-family:var(--font-d);font-size:.6rem;letter-spacing:.2em;color:var(--mid);text-transform:uppercase">10 Demo</span>
+        </div>
+      </div>
+
+      <!-- BUILD IN PUBLIC 20% -->
+      <div class="rub-card a" style="--d:.42s">
+        <span class="rub-pct">20%</span>
+        <p class="rub-pts">Build in public</p>
+        <p class="rub-title">El proceso en vivo</p>
+        <div style="margin-top:.4rem;display:flex;flex-direction:column;gap:.18rem">
+          <p class="rub-li">Repositorio público con historial completo de commits</p>
+          <p class="rub-li">Deploy continuo — cada push visible en Netlify en minutos</p>
+          <p class="rub-li">README documentado con comandos ffmpeg, arquitectura y rutas</p>
+          <p class="rub-li">Detrás de cámaras: decisiones técnicas registradas en el chat</p>
+          <p class="rub-li">Posts y actualizaciones de avance en redes</p>
+        </div>
+        <div style="margin-top:auto;padding-top:.6rem;border-top:1px solid rgba(200,190,178,.07);display:flex;justify-content:space-between">
+          <span style="font-family:var(--font-d);font-size:.6rem;letter-spacing:.2em;color:var(--mid);text-transform:uppercase">8 Journal</span>
+          <span style="font-family:var(--font-d);font-size:.6rem;letter-spacing:.2em;color:var(--mid);text-transform:uppercase">7 Redes</span>
+          <span style="font-family:var(--font-d);font-size:.6rem;letter-spacing:.2em;color:var(--mid);text-transform:uppercase">5 Tracking</span>
+        </div>
+      </div>
+
+      <!-- BE THE BEST 30% -->
+      <div class="rub-card a" style="--d:.54s;border-color:rgba(166,123,91,.22);background:rgba(166,123,91,.035)">
+        <span class="rub-pct">30%</span>
+        <p class="rub-pts">Be the best</p>
+        <p class="rub-title">Ambición &amp; acabado</p>
+        <div style="margin-top:.4rem;display:flex;flex-direction:column;gap:.18rem">
+          <p class="rub-li">Primer asistente IA editorial para moda en El Salvador</p>
+          <p class="rub-li">UI editorial de nivel mundial — paleta, tipografía, motion</p>
+          <p class="rub-li">Framer Motion con stagger, clip-path y variantes personalizadas</p>
+          <p class="rub-li">Pitch deck interactivo con transiciones curtain, cursor custom</p>
+          <p class="rub-li">Producto terminado con visión de startup real</p>
+        </div>
+        <div style="margin-top:auto;padding-top:.6rem;border-top:1px solid rgba(166,123,91,.12);display:flex;justify-content:space-between">
+          <span style="font-family:var(--font-d);font-size:.6rem;letter-spacing:.2em;color:var(--caramel);text-transform:uppercase">15 Ambición</span>
+          <span style="font-family:var(--font-d);font-size:.6rem;letter-spacing:.2em;color:var(--caramel);text-transform:uppercase">15 Pulido</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bonus row -->
+    <div class="rub-bonus-row a" style="--d:.7s">
+      <div class="rub-bonus">
+        <span class="rub-bonus-pts">+15</span>
+        <span>Post más viral</span>
+      </div>
+      <div class="rub-bonus">
+        <span class="rub-bonus-pts">+10</span>
+        <span>Mejor foto del evento</span>
+      </div>
+      <div class="rub-bonus">
+        <span class="rub-bonus-pts">+5</span>
+        <span>Mejor hilo del proyecto</span>
+      </div>
+      <div class="a" style="--d:.85s;margin-left:auto;align-self:center">
+        <p style="font-family:var(--font-d);font-size:clamp(.6rem,.78vw,.74rem);color:var(--dim);letter-spacing:.18em;text-transform:uppercase">El Salvador · 2026</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     11 — CTA / CIERRE
+══════════════════════════════════════ -->
+<section class="slide" id="s10">
+  <div class="bg-num" style="right:50%;transform:translateX(50%);opacity:.018;bottom:-8vh">11</div>
   <!-- Animated glow -->
   <div style="position:absolute;inset:0;pointer-events:none">
     <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:60vw;height:60vw;background:radial-gradient(circle,rgba(166,123,91,.07) 0%,transparent 65%);animation:breathe 6s ease-in-out infinite alternate"></div>
