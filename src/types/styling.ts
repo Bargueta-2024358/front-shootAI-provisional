@@ -1,35 +1,20 @@
+export interface OutfitLink {
+  label: string
+  url: string
+}
+
+export interface RecommendedOutfit {
+  id: string
+  image: string
+  text: string
+  links: OutfitLink[]
+}
+
 export interface ColorSwatch {
   hex: string
   name: string
 }
 
-export interface GarmentRecommendation {
-  label: string
-  description: string
-}
-
-export interface AccessorySuggestion {
-  label: string
-  category: 'joyería' | 'bolso' | 'calzado' | 'cinturón' | 'otro'
-  description: string
-}
-
-export interface SilhouetteAnalysis {
-  type: string
-  description: string
-  matchPercentage: number
-  strengths: string[]
-  recommendations: GarmentRecommendation[]
-  colorPalette: ColorSwatch[]
-  accessories: AccessorySuggestion[]
-}
-
-export type EditorialContext =
-  | 'estudio'
-  | 'exterior'
-  | 'pasarela'
-  | 'editorial'
-  | 'casual'
 
 export interface ScanMeasurements {
   height: number
