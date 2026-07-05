@@ -1,4 +1,25 @@
-export const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api'
+function resolveApiBase(): string {
+  const configured = import.meta.env.VITE_API_URL as string | undefined
+
+  if (
+    configured &&
+    !configured.includes('localhost') &&
+    !configured.includes('127.0.0.1')
+  ) {
+    return configured.replace(/\/$/, '')
+  }
+
+  if (typeof window !== 'undefined') {
+    const { hostname } = window.location
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      return '/api'
+    }
+  }
+
+  return 'http://localhost:3000/api'
+}
+
+export const API_BASE = resolveApiBase()
 
 export async function apiFetch(
   path: string,
@@ -14,7 +35,9 @@ export async function apiFetch(
     headers.set('Content-Type', 'application/json')
   }
 
-  return fetch(`${API_BASE}${path}`, {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+
+  return fetch(`${API_BASE}${normalizedPath}`, {
     ...options,
     headers,
   })

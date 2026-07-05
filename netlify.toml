@@ -2,6 +2,9 @@
   command = "npm run build"
   publish = "dist"
 
+[build.environment]
+  VITE_API_URL = "/api"
+
 [[headers]]
   for = "/videos/*.mp4"
   [headers.values]

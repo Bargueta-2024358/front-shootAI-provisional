@@ -14,7 +14,9 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, envDir, '')
 
   const viteEnv = {
-    VITE_API_URL: env.VITE_API_URL || DEFAULTS.VITE_API_URL,
+    VITE_API_URL:
+      env.VITE_API_URL ||
+      (mode === 'production' ? '/api' : DEFAULTS.VITE_API_URL),
     VITE_SUPABASE_URL: env.VITE_SUPABASE_URL || DEFAULTS.VITE_SUPABASE_URL,
     VITE_SUPABASE_ANON_KEY:
       env.VITE_SUPABASE_ANON_KEY || DEFAULTS.VITE_SUPABASE_ANON_KEY,
