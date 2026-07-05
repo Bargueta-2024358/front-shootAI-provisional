@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ATELIER SCAN · Motor de Pose + Insights</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="dot"></span>
+        <div>
+          <h1>ATELIER<span>SCAN</span></h1>
+          <p class="tagline">Motor de pose &amp; diagnóstico de composición · en navegador</p>
+        </div>
+      </div>
+      <div class="status" id="status" data-state="idle">
+        <span class="status-led"></span>
+        <span id="statusText">Cargando modelo…</span>
+      </div>
+    </header>
+
+    <main class="layout">
+      <!-- Panel izquierdo: controles -->
+      <aside class="panel">
+        <section class="card">
+          <h2>1 · Entrada</h2>
+          <label class="dropzone" id="dropzone">
+            <input type="file" id="fileInput" accept="image/*" hidden />
+            <div class="dz-inner">
+              <div class="dz-icon">⬆</div>
+              <strong>Sube la foto del modelo</strong>
+              <span>arrastra aquí o haz clic · JPG / PNG</span>
+            </div>
+          </label>
+          <div class="samples">
+            <span>o prueba:</span>
+            <button class="chip" data-sample="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=800&q=80">Editorial A</button>
+            <button class="chip" data-sample="https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=800&q=80">Editorial B</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>2 · Capas del overlay</h2>
+          <div class="toggles">
+            <label class="switch"><input type="checkbox" id="tglSkeleton" checked /><span></span>Esqueleto &amp; nodos</label>
+            <label class="switch"><input type="checkbox" id="tglShape" checked /><span></span>Forma corporal</label>
+            <label class="switch"><input type="checkbox" id="tglRatio" checked /><span></span>Líneas hombro/cadera</label>
+            <label class="switch"><input type="checkbox" id="tglSymmetry" checked /><span></span>Línea de simetría</label>
+            <label class="switch"><input type="checkbox" id="tglLimbs" checked /><span></span>Etiquetas de extremidades</label>
+            <label class="switch"><input type="checkbox" id="tglCamera" checked /><span></span>Ángulo de cámara</label>
+            <label class="switch"><input type="checkbox" id="tglPose" checked /><span></span>Sugerencias de pose</label>
+            <label class="switch"><input type="checkbox" id="tglHud" checked /><span></span>Recuadro de diagnóstico</label>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>3 · Diagnóstico</h2>
+          <div id="insightsList" class="insights-list">
+            <p class="muted">Sube una imagen para ver el análisis.</p>
+          </div>
+        </section>
+
+        <section class="card actions">
+          <button id="exportBtn" class="btn primary" disabled>Exportar PNG</button>
+          <button id="reanalyzeBtn" class="btn" disabled>Re-analizar</button>
+        </section>
+      </aside>
+
+      <!-- Panel derecho: viewport -->
+      <section class="viewport">
+        <div class="stage" id="stage">
+          <canvas id="canvas"></canvas>
+          <div class="stage-empty" id="stageEmpty">
+            <div class="scan-frame">
+              <span></span><span></span><span></span><span></span>
+            </div>
+            <p>El visor mostrará la foto con el mapa de articulaciones e insights.</p>
+          </div>
+          <div class="stage-loader" id="stageLoader" hidden>
+            <div class="scanline"></div>
+            <p id="loaderText">Analizando cuerpo…</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- App (ES modules) -->
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>
