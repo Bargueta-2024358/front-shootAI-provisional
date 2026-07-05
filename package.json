@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/netlify-prebuild.mjs && tsc && vite build",
+    "build": "node scripts/netlify-prebuild.mjs && vite build",
+    "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "setup": "powershell -ExecutionPolicy Bypass -File ./scripts/setup.ps1"
   },
