@@ -1,14 +1,16 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import ProtectedRoute from './components/ProtectedRoute'
 import Landing from './views/Landing'
 
-// Non-landing views are lazy-loaded: each chunk is only downloaded when
-// the user navigates to that route for the first time.
-const PreShoot       = lazy(() => import('./views/PreShoot'))
-const LiveShoot      = lazy(() => import('./views/LiveShoot'))
-const Waiting        = lazy(() => import('./views/Waiting'))
+const PreShoot = lazy(() => import('./views/PreShoot'))
+const LiveShoot = lazy(() => import('./views/LiveShoot'))
+const Waiting = lazy(() => import('./views/Waiting'))
 const ModelSimulator = lazy(() => import('./views/ModelSimulator'))
-const OutfitStyling  = lazy(() => import('./views/OutfitStyling'))
+const OutfitStyling = lazy(() => import('./views/OutfitStyling'))
+const Auth = lazy(() => import('./views/Auth'))
+const Profile = lazy(() => import('./views/Profile'))
+const Favorites = lazy(() => import('./views/Favorites'))
 
 function RouteLoader() {
   return (
@@ -26,17 +28,74 @@ function RouteLoader() {
   )
 }
 
+function Protected({
+  children,
+  requireBodyPhoto = false,
+}: {
+  children: React.ReactNode
+  requireBodyPhoto?: boolean
+}) {
+  return (
+    <ProtectedRoute requireBodyPhoto={requireBodyPhoto}>{children}</ProtectedRoute>
+  )
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <Suspense fallback={<RouteLoader />}>
-        <Routes>
-          <Route path="/"                element={<Landing />} />
-          <Route path="/pre-shoot"       element={<PreShoot />} />
-          <Route path="/live-shoot"      element={<LiveShoot />} />
-          <Route path="/espera"          element={<Waiting />} />
-          <Route path="/model-simulator" element={<ModelSimulator />} />
-          <Route path="/outfit-styling"  element={<OutfitStyling />} />
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route
+              path="/profile"
+              element={
+                <Protected>
+                  <Profile />
+                </Protected>
+              }
+            />
+            <Route
+              path="/favoritos"
+              element={
+                <Protected>
+                  <Favorites />
+                </Protected>
+              }
+            />
+            <Route
+              path="/pre-shoot"
+              element={
+                <Protected requireBodyPhoto>
+                  <PreShoot />
+                </Protected>
+              }
+            />
+            <Route
+              path="/outfit-styling"
+              element={
+                <Protected requireBodyPhoto>
+                  <OutfitStyling />
+                </Protected>
+              }
+            />
+            <Route
+              path="/live-shoot"
+              element={
+                <Protected requireBodyPhoto>
+                  <LiveShoot />
+                </Protected>
+              }
+            />
+            <Route
+              path="/model-simulator"
+              element={
+                <Protected requireBodyPhoto>
+                  <ModelSimulator />
+                </Protected>
+              }
+            />
+            <Route path="/espera" element={<Waiting />} />
         </Routes>
       </Suspense>
     </BrowserRouter>

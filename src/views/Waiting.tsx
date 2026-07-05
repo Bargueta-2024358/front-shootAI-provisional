@@ -24,6 +24,8 @@ interface WaitingOverlayProps {
   onComplete?: () => void
   /** Hide the "Cancelar" back-button (useful when invoked from another view). */
   hideCancelButton?: boolean
+  /** When false, overlay stays open until caller closes it (e.g. during API calls). */
+  autoDismiss?: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -53,6 +55,7 @@ export function WaitingOverlay({
   isOpen = true,
   onComplete,
   hideCancelButton = false,
+  autoDismiss = true,
 }: WaitingOverlayProps) {
   const navigate = useNavigate()
   const [msgIndex, setMsgIndex] = useState(0)
@@ -75,9 +78,9 @@ export function WaitingOverlay({
     return () => clearInterval(id)
   }, [isOpen])
 
-  // Auto-complete after exactly TOTAL_MS
+  // Auto-complete after exactly TOTAL_MS (demo / standalone route only)
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen || !autoDismiss) return
     const id = setTimeout(() => {
       if (completeFired.current) return
       completeFired.current = true
@@ -89,7 +92,7 @@ export function WaitingOverlay({
       // by resetting index (the interval above keeps rotating already)
     }, TOTAL_MS)
     return () => clearTimeout(id)
-  }, [isOpen, onComplete])
+  }, [isOpen, onComplete, autoDismiss])
 
   const handleCancel = () => {
     completeFired.current = true
