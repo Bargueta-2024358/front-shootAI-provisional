@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { navLinks } from '../data/content'
 import AnimatedLink from './AnimatedLink'
@@ -22,21 +23,27 @@ export default function Navbar() {
       animate={{ backgroundColor: scrolled ? 'rgba(255,255,255,1)' : 'rgba(255,255,255,0)' }}
     >
       <div className="mx-auto flex h-20 max-w-[1400px] items-center justify-between px-6 md:px-10">
-        <a href="#" className="interactive font-display text-sm tracking-[0.35em] uppercase">
+        <Link to="/" className="interactive font-display text-sm tracking-[0.35em] uppercase">
           Shoot AI
-        </a>
+        </Link>
 
         <nav className="hidden items-center gap-8 md:flex">
           {navLinks.map((link) => (
-            <AnimatedLink key={link.href} href={link.href} light={light} className="text-xs tracking-[0.2em] uppercase not-italic">
+            <AnimatedLink
+              key={link.href}
+              href={link.href}
+              light={light}
+              className="text-xs tracking-[0.2em] uppercase not-italic"
+            >
               {link.label}
             </AnimatedLink>
           ))}
         </nav>
 
         <div className="flex items-center gap-4">
+          {/* "Reservar sesión" scrolls to #contacto in the Landing footer */}
           <a
-            href="#contacto"
+            href="/#contacto"
             className={`interactive hidden border px-5 py-2.5 font-display text-xs tracking-[0.15em] uppercase transition-all duration-300 md:inline-block ${
               scrolled
                 ? 'border-black text-black hover:border-caramel hover:bg-caramel hover:text-white focus-visible:border-caramel focus-visible:bg-caramel focus-visible:text-white'
@@ -46,6 +53,7 @@ export default function Navbar() {
             Reservar sesión
           </a>
 
+          {/* Mobile menu */}
           <details className="relative md:hidden">
             <summary
               className={`interactive list-none cursor-pointer font-display text-xs tracking-[0.2em] uppercase ${light ? 'text-white' : 'text-black'}`}
@@ -54,16 +62,16 @@ export default function Navbar() {
             </summary>
             <div className="absolute right-0 top-full mt-3 min-w-[180px] border border-silver bg-white p-4 shadow-lg">
               {navLinks.map((link) => (
-                <a
+                <AnimatedLink
                   key={link.href}
                   href={link.href}
-                  className="interactive block py-2 font-body text-sm text-black hover:text-caramel"
+                  className="block py-2 text-sm not-italic"
                 >
                   {link.label}
-                </a>
+                </AnimatedLink>
               ))}
               <a
-                href="#contacto"
+                href="/#contacto"
                 className="interactive mt-2 block border border-black px-3 py-2 text-center font-display text-xs tracking-[0.15em] uppercase hover:border-caramel hover:bg-caramel hover:text-white"
               >
                 Reservar sesión

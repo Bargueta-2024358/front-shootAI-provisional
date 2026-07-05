@@ -9,7 +9,6 @@
 
   body {
     @apply bg-white font-body text-black antialiased;
-    cursor: none;
   }
 
   ::selection {
